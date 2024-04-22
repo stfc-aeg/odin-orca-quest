@@ -1,0 +1,84 @@
+#ifndef INCLUDE_ORCAQUESTCAMERACONTROLLER_H_
+#define INCLUDE_ORCAQUESTCAMERACONTROLLER_H_
+
+#include <vector>
+
+#include <log4cxx/logger.h>
+using namespace log4cxx;
+using namespace log4cxx::helpers;
+#include <DebugLevelLogger.h>
+#include <IpcMessage.h>
+#include "OrcaQuestCameraConfiguration.h"
+#include <ParamContainer.h>
+
+#include "OrcaQuestCamera.h"
+#include "OrcaCaptureConfiguration.h"
+
+#include "DpdkSharedBuffer.h"
+#include "DpdkCoreConfiguration.h"
+#include "DpdkWorkerCore.h"
+#include "ProtocolDecoder.h"
+
+#include "OrcaQuestCameraStateMachine.h"
+
+namespace FrameProcessor
+{
+    const std::string CAMERA_CONFIG_PATH = "camera";
+    const std::string CAMERA_COMMAND_PATH = "command";
+
+    class OrcaQuestCameraController
+    {
+    public:
+        //! Constructor for the controller taking a pointer to the decoder as an argument
+        OrcaQuestCameraController(ProtocolDecoder* decoder);
+
+        //! Destructor for the controller class
+        ~OrcaQuestCameraController();
+
+        //! Run the specified command
+        bool execute_command(std::string& command);
+        
+        //! Connect to the camera
+        bool connect();
+
+        //! Disconnect from the camera
+        bool disconnect();
+
+        //! Arm the camera, ready for capture
+        bool arm_camera();
+
+        //! Disarm camera
+        bool disarm_camera();
+
+        //! Start capturing frames
+        bool start_capture();
+
+        //! End current capture
+        bool end_capture();
+
+        //! Returns the name of the current camera state
+        std::string camera_state_name(void);
+
+        void configure(OdinData::IpcMessage& config_msg, OdinData::IpcMessage& config_reply);
+
+        bool get_recording(void);
+
+        char* get_frame(void);
+
+        bool update_configuration(OdinData::ParamContainer::Document& params);
+
+    private:
+        char* last_frame_;
+        bool recording_;
+
+        OrcaQuestCameraConfiguration camera_config_;
+
+        ProtocolDecoder* decoder_;
+
+        OrcaQuestCamera camera_;
+        OrcaQuestCameraState camera_state_;
+
+        LoggerPtr logger_;
+    };
+}
+#endif
