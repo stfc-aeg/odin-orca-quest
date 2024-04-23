@@ -13,6 +13,7 @@ using namespace log4cxx::helpers;
 
 #include "OrcaQuestCamera.h"
 #include "OrcaCaptureConfiguration.h"
+#include "OrcaQuestCameraStatus.h"
 
 #include "DpdkSharedBuffer.h"
 #include "DpdkCoreConfiguration.h"
@@ -67,11 +68,16 @@ namespace FrameProcessor
 
         bool update_configuration(OdinData::ParamContainer::Document& params);
 
+        bool request_configuration(const std::string param_prefix, OdinData::IpcMessage& config_reply);
+
+        bool get_status(const std::string param_prefix, OdinData::IpcMessage& config_reply);
+
     private:
         char* last_frame_;
         bool recording_;
 
         OrcaQuestCameraConfiguration camera_config_;
+        OrcaQuestCameraStatus camera_status_;
 
         ProtocolDecoder* decoder_;
 

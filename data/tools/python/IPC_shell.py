@@ -110,6 +110,8 @@ class OdinDataClient(object):
                 elif user_input.lower().startswith('config '):
                     _, config, value = user_input.split(maxsplit=4)
                     self.send_config(config, value)
+                elif user_input.lower().startswith('req_config '):
+                    self.request_config()
                 elif user_input.lower().startswith('acquisition '):
                     _, path, acquisition_id, frames = user_input.split(maxsplit=3)
                     self.acquisition(path, acquisition_id, frames)
@@ -164,6 +166,21 @@ class OdinDataClient(object):
         }
 
         self.send_config_message(self.command_msg)
+
+
+    def request_config(self):
+        """Get the camera config from odin-data"""
+
+
+        all_responses_valid = True
+        for channel in self.ctrl_channels:
+            config_msg = IpcMessage('cmd', 'request_configuration', id=self._next_msg_id())
+            self.logger.info(f"Sending config request to {channel.identity}")
+            channel.send(config_msg.encode())
+            if not self.await_response(channel):  # pass the channel to await_response
+                all_responses_valid = False
+        return all_responses_valid
+
 
     def send_config(self, config, value):
         """send a config message."""

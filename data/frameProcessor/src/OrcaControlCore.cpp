@@ -123,7 +123,7 @@ namespace FrameProcessor
                             std::cout <<
                             "Got camera control read configuration request from client " << client_identity
                             << " : " << ctrl_req_encoded << std::endl;
-                            //this->request_configuration(std::string(""), ctrl_reply);
+                            OrcaQuestCameraController_->request_configuration(std::string(""), ctrl_reply);
                             break;
 
                         // Handle a status request command
@@ -131,7 +131,7 @@ namespace FrameProcessor
                             std::cout <<
                             "Got camera control status request from client " << client_identity
                                 << " : " << ctrl_req_encoded << std::endl;
-                            //this->get_status(std::string(""), ctrl_reply);
+                            OrcaQuestCameraController_->get_status(std::string(""), ctrl_reply);
                             break;
 
                         // Handle unsupported request values by setting the status and error message

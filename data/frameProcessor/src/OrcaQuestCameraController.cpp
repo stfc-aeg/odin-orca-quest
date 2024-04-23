@@ -179,6 +179,34 @@ bool OrcaQuestCameraController::update_configuration(OdinData::ParamContainer::D
     return true;
 }
 
+bool OrcaQuestCameraController::request_configuration(const std::string param_prefix, OdinData::IpcMessage& config_reply)
+{
+
+    OdinData::ParamContainer::Document camera_config;
+
+    std::string camera_config_prefix = param_prefix + CAMERA_CONFIG_PATH;
+
+    camera_config_.encode(camera_config, camera_config_prefix);
+
+    config_reply.update(camera_config);
+
+    return true;
+}
+
+bool OrcaQuestCameraController::get_status(const std::string param_prefix, OdinData::IpcMessage& config_reply)
+{
+
+    OdinData::ParamContainer::Document camera_status;
+
+    std::string camera_status_prefix = param_prefix + CAMERA_CONFIG_PATH;
+
+    camera_status_.encode(camera_status, camera_status_prefix);
+
+    config_reply.update(camera_status);
+
+    return true;
+}
+
 // Camera state name
 std::string OrcaQuestCameraController::camera_state_name()
 {
