@@ -117,6 +117,8 @@ void OrcaQuestCameraController::configure(OdinData::IpcMessage& config_msg, Odin
         {
             config_reply.set_nack("");  // Set an empty nack to indicate success
         }
+
+        camera_status_.camera_status_ = camera_state_.current_state_name();
     }
     
 }
@@ -187,7 +189,6 @@ bool OrcaQuestCameraController::request_configuration(const std::string param_pr
     std::string camera_config_prefix = param_prefix + CAMERA_CONFIG_PATH;
 
     camera_config_.encode(camera_config, camera_config_prefix);
-
     config_reply.update(camera_config);
 
     return true;
@@ -198,10 +199,9 @@ bool OrcaQuestCameraController::get_status(const std::string param_prefix, OdinD
 
     OdinData::ParamContainer::Document camera_status;
 
-    std::string camera_status_prefix = param_prefix + CAMERA_CONFIG_PATH;
+    std::string camera_status_prefix = "status";
 
     camera_status_.encode(camera_status, camera_status_prefix);
-
     config_reply.update(camera_status);
 
     return true;
