@@ -25,22 +25,42 @@ class OrcaController():
             channel.connect(endpoint)
             self.ctrl_channels.append(channel)
 
+        self.msg_id = 0
+
+        self.last_command_channel = None
+        tree = {
+            'command': (lambda: self.last_command_channel, self.send_command)
+        }
+
+        # Array of camera config dictionaries, to be accessed via index
+        camtrees = []
+        for i in range(len(self.ctrl_channels)):
+            channel = self.ctrl_channels[i]
+            camtrees.append(self.request_config(channel))
+        tree['cameras'] = camtrees  # Array of cameras here
+
+        self.param_tree = ParameterTree(tree)
+
         logging.debug("instance_count: %s", instance_count)
         logging.debug("ctrl_channels: %s", self.ctrl_channels)
 
-        # tree
-        self.latest_command = None
-        self.param_tree = ParameterTree({
-            'command': (lambda: self.latest_command, self.send_command)
-        })
-
-        self.msg_id = 0
 
     def next_msg_id(self):
         """Return the next message id."""
 
         self.msg_id += 1
         return self.msg_id
+
+    def request_config(self, channel):
+
+        config_msg = IpcMessage('cmd', 'request_configuration', id=self.next_msg_id())
+        logging.info(f"Sending config request to {channel.identity}")
+        channel.send(config_msg.encode())
+        reply = self.await_response(channel)
+        if reply:
+            return reply.attrs['params']['camera']
+        else:
+            return False
 
     def send_command(self, value):
         """Compose a command message to be sent."""

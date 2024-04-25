@@ -62,7 +62,7 @@ class OrcaAdapter(ApiAdapter):
             self.camera.set(path, data)
             response = self.camera.get(path)
             status_code = 200
-        except LiveXError as e:
+        except OrcaError as e:
             response = {'error': str(e)}
             status_code = 400
         except (TypeError, ValueError) as e:
@@ -101,5 +101,3 @@ class OrcaAdapter(ApiAdapter):
     def initialize(self, adapters):
         """Get list of adapters and call relevant functions for them."""
         self.adapters = dict((k, v) for k, v in adapters.items() if v is not self)
-
-        self.camera.initialise_adapters(self.adapters)
