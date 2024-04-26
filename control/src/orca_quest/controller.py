@@ -4,6 +4,8 @@ from odin_data.ipc_channel import IpcChannel
 from odin_data.ipc_message import IpcMessage
 from odin.adapters.parameter_tree import ParameterTree, ParameterTreeError
 
+from functools import partial
+
 import logging
 
 class OrcaError(Exception):
@@ -27,16 +29,19 @@ class OrcaController():
 
         self.msg_id = 0
 
-        self.last_command_channel = None
-        tree = {
-            'command': (lambda: self.last_command_channel, self.send_command)
-        }
+        tree = {}
 
-        # Array of camera config dictionaries, to be accessed via index
+        # Array of camera dictionaries, to be accessed via index. cameras/0/command, etc.
         camtrees = []
         for i in range(len(self.ctrl_channels)):
             channel = self.ctrl_channels[i]
-            camtrees.append(self.request_config(channel))
+
+            channel_subtree = {}
+            channel_subtree["command"] = (lambda: None, partial(self.send_command, channel=channel))
+
+            channel_subtree["config"] = self.request_config(channel)
+            camtrees.append(channel_subtree)
+
         tree['cameras'] = camtrees  # Array of cameras here
 
         self.param_tree = ParameterTree(tree)
@@ -62,8 +67,8 @@ class OrcaController():
         else:
             return False
 
-    def send_command(self, value):
-        """Compose a command message to be sent."""
+    def send_command(self, channel, value):
+        """Compose a command message to be sent to a given channel."""
 
         self.command = {}
         self.command["command"] = value
@@ -71,10 +76,25 @@ class OrcaController():
         self.command_msg = {
             "params": self.command
         }
-        self.send_config_message(self.command_msg)
+        self.send_config_message(channel, self.command_msg)
     
-    def send_config_message(self, config):
-        """Send a configuration message."""
+    def send_config_message(self, channel, config):
+        """Send a configuration message to a given channel."""
+
+        msg = IpcMessage('cmd', 'configure', id=self.next_msg_id())
+        msg.attrs.update(config)
+        # logging
+        logging.debug(f"Sending configuration: {config} to {channel.identity}")
+
+        channel.send(msg.encode())
+        if not self.await_response(channel):
+            # await response from channel
+            return False
+        return True
+
+
+    def send_config_message_all(self, config):
+        """Send a configuration message to all channels."""
 
         all_responses_valid = True
 
