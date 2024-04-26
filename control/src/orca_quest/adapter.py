@@ -16,10 +16,18 @@ class OrcaAdapter(ApiAdapter):
         super(OrcaAdapter, self).__init__(**kwargs)
 
         # Parse options
-        instance_count = int(self.options.get('instance_count', 1))
+        num_cameras = int(self.options.get('num_cameras', 1))
+
+        # Split on comma, remove whitespace if it exists
+        endpoints = [
+            item.strip() for item in self.options.get('camera_endpoint', None).split(",")
+        ]
+        names = [
+            item.strip() for item in self.options.get('camera_name', 'camera_1').split(",")
+        ]
 
         # Create acquisition controller
-        self.camera = OrcaController(instance_count)
+        self.camera = OrcaController(num_cameras, endpoints, names)
 
     @response_types('application/json', default='application/json')
     def get(self, path, request):

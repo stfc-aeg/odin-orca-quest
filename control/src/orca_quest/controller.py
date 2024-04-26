@@ -15,60 +15,58 @@ class OrcaError(Exception):
 class OrcaController():
     """Class to send commands via IPC to ORCA-Quest camera."""
 
-    def __init__(self, instance_count):
+    def __init__(self, num_cameras, endpoints, names):
         """This constructor initialises the object and builds parameter trees."""
 
-        self.port = 9001
-        self.ctrl_channels = []
-
-        for i in range(instance_count):
-            channel = IpcChannel(IpcChannel.CHANNEL_TYPE_DEALER)
-            endpoint = f"tcp://192.168.0.31:{self.port + i}"  # Different port for each
-            channel.connect(endpoint)
-            self.ctrl_channels.append(channel)
-
+        self.cameras = []
         self.msg_id = 0
 
         tree = {}
-
-        # Array of camera dictionaries, to be accessed via index. cameras/0/command, etc.
         camtrees = []
-        for i in range(len(self.ctrl_channels)):
-            channel = self.ctrl_channels[i]
 
-            channel_subtree = {}
-            channel_subtree["command"] = (lambda: None, partial(self.send_command, channel=channel))
+        if len(endpoints) < num_cameras:
+            raise OrcaError("Fewer endpoints defined than number of cameras in config.")
 
-            channel_subtree["config"] = self.request_config(channel)
-            camtrees.append(channel_subtree)
+        for i in range(num_cameras):
+            camera = IpcChannel(IpcChannel.CHANNEL_TYPE_DEALER)
+            endpoint = endpoints[i]
+            camera.connect(endpoint)
+            self.cameras.append(camera)
+
+            # Each camera has its own part of the tree kept in an array
+            camera_subtree = {}
+            camera_subtree["camera_name"] = names[i]
+            camera_subtree["endpoint"] = endpoint
+            camera_subtree["command"] = (lambda: None, partial(self.send_command, camera=camera))
+            camera_subtree["config"] = self.request_config(camera)
+            camtrees.append(camera_subtree)
 
         tree['cameras'] = camtrees  # Array of cameras here
 
         self.param_tree = ParameterTree(tree)
 
-        logging.debug("instance_count: %s", instance_count)
-        logging.debug("ctrl_channels: %s", self.ctrl_channels)
+        logging.debug("instance_count: %s", num_cameras)
+        logging.debug("cameras: %s", self.cameras)
 
 
     def next_msg_id(self):
         """Return the next message id."""
-
         self.msg_id += 1
         return self.msg_id
 
-    def request_config(self, channel):
+    def request_config(self, camera):
 
         config_msg = IpcMessage('cmd', 'request_configuration', id=self.next_msg_id())
-        logging.info(f"Sending config request to {channel.identity}")
-        channel.send(config_msg.encode())
-        reply = self.await_response(channel)
+        logging.info(f"Sending config request to {camera.identity}")
+        camera.send(config_msg.encode())
+        reply = self.await_response(camera)
         if reply:
             return reply.attrs['params']['camera']
         else:
             return False
 
-    def send_command(self, channel, value):
-        """Compose a command message to be sent to a given channel."""
+    def send_command(self, camera, value):
+        """Compose a command message to be sent to a given camera."""
 
         self.command = {}
         self.command["command"] = value
@@ -76,54 +74,54 @@ class OrcaController():
         self.command_msg = {
             "params": self.command
         }
-        self.send_config_message(channel, self.command_msg)
+        self.send_config_message(camera, self.command_msg)
     
-    def send_config_message(self, channel, config):
-        """Send a configuration message to a given channel."""
+    def send_config_message(self, camera, config):
+        """Send a configuration message to a given camera."""
 
         msg = IpcMessage('cmd', 'configure', id=self.next_msg_id())
         msg.attrs.update(config)
         # logging
-        logging.debug(f"Sending configuration: {config} to {channel.identity}")
+        logging.debug(f"Sending configuration: {config} to {camera.identity}")
 
-        channel.send(msg.encode())
-        if not self.await_response(channel):
-            # await response from channel
+        camera.send(msg.encode())
+        if not self.await_response(camera):
+            # await response from camera
             return False
         return True
 
 
     def send_config_message_all(self, config):
-        """Send a configuration message to all channels."""
+        """Send a configuration message to all cameras."""
 
         all_responses_valid = True
 
-        for channel in self.ctrl_channels:
+        for camera in self.cameras:
             msg = IpcMessage('cmd', 'configure', id=self.next_msg_id())
             msg.attrs.update(config)
             # logging
-            logging.debug(f"Sending configuration: {config} to {channel.identity}")
+            logging.debug(f"Sending configuration: {config} to {camera.identity}")
 
-            channel.send(msg.encode())
-            if not self.await_response(channel):
-                # await response from channel
+            camera.send(msg.encode())
+            if not self.await_response(camera):
+                # await response from camera
                 all_responses_valid = False
 
         return all_responses_valid
 
-    def await_response(self, channel, timeout_ms=10000):
-        """Await a response on the given channel."""
+    def await_response(self, camera, timeout_ms=5000):
+        """Await a response on the given camera."""
 
-        pollevents = channel.poll(timeout_ms)
+        pollevents = camera.poll(timeout_ms)
 
         if pollevents == IpcChannel.POLLIN:
-            reply = IpcMessage(from_str=channel.recv())
+            reply = IpcMessage(from_str=camera.recv())
 
-            logging.debug(f"Got response from {channel.identity}: {reply}")
+            logging.debug(f"Got response from {camera.identity}: {reply}")
 
             return reply
         else:
-            logging.debug(f"No response received or error occurred from {channel.identity}.")
+            logging.debug(f"No response received or error occurred from {camera.identity}.")
 
             return False
 
@@ -144,4 +142,4 @@ class OrcaController():
         try:
             self.param_tree.set(path, data)
         except ParameterTreeError as e:
-            raise LiveXError(e)
+            raise OrcaError(e)
