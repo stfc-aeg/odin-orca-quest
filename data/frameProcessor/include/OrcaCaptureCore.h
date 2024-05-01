@@ -7,6 +7,8 @@
 using namespace log4cxx;
 using namespace log4cxx::helpers;
 #include <DebugLevelLogger.h>
+#include "MjpegStreamer.h"
+
 
 #include "DpdkWorkerCore.h"
 #include "DpdkSharedBuffer.h"

@@ -133,6 +133,20 @@ namespace FrameProcessor
         uint64_t frame_counter = 0;
         uint64_t dropped_frames_ = 0;
 
+        // Create an io_service object
+        boost::asio::io_service io_service;
+
+        // Create an instance of MjpegStreamer with a frame size of 640x480
+        auto streamer = std::make_shared<MjpegStreamer>(io_service, 4096, 2304, 100);
+
+        // Start the streamer on port 8080
+        streamer->start(9002);
+
+        // Create a separate thread for running the io_service
+        std::thread io_thread([&io_service]() {
+            io_service.run();
+        });
+
         LOG4CXX_INFO(logger_, "Core " << lcore_id_ << " Connecting to camera\n");
 
         bool passed = false;
@@ -190,6 +204,11 @@ namespace FrameProcessor
 
                     // Copy the frame data to the frame struct
                     rte_memcpy(decoder_->get_image_data_start(current_super_frame_buffer_), frame_src, frame_size);
+
+                    if(frame_counter % 10)
+                    {
+                        streamer->push((uint16_t*)frame_src, frame_size);
+                    }
 
                     rte_ring_enqueue(
                                 downstream_rings_[

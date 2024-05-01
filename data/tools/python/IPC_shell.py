@@ -107,7 +107,7 @@ class OdinDataClient(object):
                 elif user_input.lower().startswith('command '):
                     _, command = user_input.split(maxsplit=3)
                     self.send_command(command)
-                elif user_input.lower().startswith('config '):
+                elif user_input.lower().startswith('setconfig'):
                     _, config, value = user_input.split(maxsplit=4)
                     self.send_config(config, value)
                 elif user_input.lower().startswith('req_config '):
