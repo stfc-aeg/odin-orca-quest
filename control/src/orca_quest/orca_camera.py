@@ -15,8 +15,6 @@ class OrcaCamera():
         self.config = {}
         self.tree = {}
 
-        self.timeout_ms = 5000
-
         self.camera = IpcChannel(IpcChannel.CHANNEL_TYPE_DEALER)
         self.camera.connect(endpoint)
 
@@ -35,6 +33,7 @@ class OrcaCamera():
                     self.config[key], partial(self.set_config, param=key)
                 )  # Function uses key (the parameter) as argument via partial
 
+        # self.status = self.request_status()
         self.tree['status'] = (lambda: self.request_status(), None)
 
     def send_command(self, value):
@@ -67,7 +66,7 @@ class OrcaCamera():
 
     def send_config_message(self, config):
         """Send a configuration message to a given camera.
-        :param config: command message dictionary in {params{camera{param:value}}} structure
+        :param config: command message dictionary
         """
         msg = IpcMessage('cmd', 'configure', id=self._next_msg_id())
         msg.attrs.update(config)
@@ -108,6 +107,7 @@ class OrcaCamera():
     def await_response(self, timeout_ms=5000, silence_reply=False):
         """Await a response on the given camera.
         :param timeout_ms: timeout in milliseconds
+        :param silence_reply: silence positive response logging if true. for frequent requests
         :return: response, or False
         """
         pollevents = self.camera.poll(timeout_ms)
@@ -126,6 +126,5 @@ class OrcaCamera():
 
     def _next_msg_id(self):
         """Return the next (incremented) message id."""
-
         self.msg_id += 1
         return self.msg_id
