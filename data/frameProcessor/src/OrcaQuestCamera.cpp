@@ -168,7 +168,7 @@ char* OrcaQuestCamera::capture_frame() {
         return NULL;
     }
 
-    std::cout << "Frame captured." << std::endl;
+    //std::cout << "Frame captured." << std::endl;
 
     return reinterpret_cast<char*>(frameBuffer_.buf);
 }

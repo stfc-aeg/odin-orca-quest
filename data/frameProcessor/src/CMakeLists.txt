@@ -20,7 +20,7 @@ add_library(OrcaQuestPlugin SHARED
         OrcaControlCore.cpp
         OrcaQuestCameraController.cpp
         OrcaQuestCameraStateMachine.cpp
-        MjpegStreamer.cpp
+        JPEGWebSocketServer.cpp
 )
 
 find_library(DCAMAPI_LIBRARY NAMES dcamapi)

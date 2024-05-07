@@ -8,7 +8,7 @@ namespace FrameProcessor
     namespace Defaults
     {
         const unsigned int frame_number = 0; 
-        const std::string camera_status = "Disconnected"; 
+        const std::string camera_status = "disconnected"; 
     }
 
     class OrcaQuestCameraStatus : public OdinData::ParamContainer

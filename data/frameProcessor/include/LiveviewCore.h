@@ -1,5 +1,5 @@
-#ifndef INCLUDE_ORCACAPTURECORE_H_
-#define INCLUDE_ORCACAPTURECORE_H_
+#ifndef INCLUDE_LIVEVIEWCORE_H_
+#define INCLUDE_LIVEVIEWCORE_H_
 
 #include <vector>
 
@@ -7,9 +7,10 @@
 using namespace log4cxx;
 using namespace log4cxx::helpers;
 #include <DebugLevelLogger.h>
-#include "MJPEGWebSocketServer.h"
+#include "LiveviewCore.h"
 
-
+#include "IpcChannel.h"
+#include "IpcMessage.h"
 #include "DpdkWorkerCore.h"
 #include "DpdkSharedBuffer.h"
 #include "DpdkCoreConfiguration.h"
@@ -22,13 +23,13 @@ using namespace log4cxx::helpers;
 
 namespace FrameProcessor
 {
-    class OrcaCaptureCore : public DpdkWorkerCore
+    class LiveviewCore : public DpdkWorkerCore
     {
     public:
-        OrcaCaptureCore(
+        LiveviewCore(
             int proc_idx, int socket_id, DpdkWorkCoreReferences dpdkWorkCoreReferences
         );
-        ~OrcaCaptureCore();
+        ~LiveviewCore();
 
         bool run(unsigned int lcore_id);
         void stop(void);
@@ -45,7 +46,7 @@ namespace FrameProcessor
         OrcaCaptureConfiguration config_;
         LoggerPtr logger_;
         
-        OrcaQuestCameraController* orca_controller_;
+        OdinData::IpcChannel Liveview_ipc_;
 
         bool camera_property_update_;
         bool in_capture_;
@@ -55,4 +56,4 @@ namespace FrameProcessor
         std::vector<struct rte_ring*> downstream_rings_;
     };
 }
-#endif // INCLUDE_ORCACAPTURECORE_H_
+#endif // INCLUDE_LIVEVIEWCORE_H_

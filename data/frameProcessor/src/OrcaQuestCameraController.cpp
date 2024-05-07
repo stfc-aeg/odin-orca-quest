@@ -12,6 +12,12 @@ OrcaQuestCameraController::OrcaQuestCameraController(ProtocolDecoder* decoder) :
     // Constructor implementation goes here.
     // Initialize decoder, loggers, or any other necessary components.
     camera_state_.initiate();
+    std::string connect = "connect";
+    execute_command(connect);
+    std::string arm = "arm";
+    execute_command(arm);
+    std::string capture = "capture";
+    execute_command(capture);
 }
 
 // Destructor

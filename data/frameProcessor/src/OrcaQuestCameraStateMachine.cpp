@@ -138,7 +138,7 @@ void OrcaQuestCameraState::init_command_type_map(void)
 
 void OrcaQuestCameraState::init_state_type_map(void)
 {
-    state_type_map_.insert(StateTypeMapEntry("off",        StateOff));
+    state_type_map_.insert(StateTypeMapEntry("disconnected",        StateOff));
     state_type_map_.insert(StateTypeMapEntry("connected",  StateConnected));
     state_type_map_.insert(StateTypeMapEntry("armed",      StateArmed));
     state_type_map_.insert(StateTypeMapEntry("capturing",  StateCapturing));

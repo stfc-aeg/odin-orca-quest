@@ -133,19 +133,22 @@ namespace FrameProcessor
         uint64_t frame_counter = 0;
         uint64_t dropped_frames_ = 0;
 
-        // Create an io_service object
-        boost::asio::io_service io_service;
+        net::io_context ioc;
+        tcp::endpoint endpoint(tcp::v4(), 9002);
+        size_t buffer_size = 5;
 
-        // Create an instance of MjpegStreamer with a frame size of 640x480
-        auto streamer = std::make_shared<MjpegStreamer>(io_service, 4096, 2304, 100);
-
-        // Start the streamer on port 8080
-        streamer->start(9002);
-
-        // Create a separate thread for running the io_service
-        std::thread io_thread([&io_service]() {
-            io_service.run();
+        JPEGWebSocketServer server(ioc, endpoint, buffer_size);
+        
+        
+        boost::thread t([&ioc]() {
+            try {
+                ioc.run();
+            } catch (const std::exception& e) {
+                std::cerr << "Exception: " << e.what() << "\n";
+            }
         });
+        
+
 
         LOG4CXX_INFO(logger_, "Core " << lcore_id_ << " Connecting to camera\n");
 
@@ -205,10 +208,23 @@ namespace FrameProcessor
                     // Copy the frame data to the frame struct
                     rte_memcpy(decoder_->get_image_data_start(current_super_frame_buffer_), frame_src, frame_size);
 
-                    if(frame_counter % 10)
+                    if(frame_counter % 60 == 0)
                     {
-                        streamer->push((uint16_t*)frame_src, frame_size);
+
+                        server.pushFrame((uint16_t*) decoder_->get_image_data_start(current_super_frame_buffer_), frame_size/2);
+
                     }
+
+                    // if(frame_counter % 10)
+                    // {
+                    //     uint16_t* frame_data_fake = (uint16_t*) malloc(frame_size);
+                    //     memset(frame_data_fake, 0x0f, frame_size);
+
+                    //     server.pushFrame(frame_data_fake, frame_size/2);
+
+                    //     free(frame_data_fake);
+
+                    // }
 
                     rte_ring_enqueue(
                                 downstream_rings_[
@@ -218,12 +234,15 @@ namespace FrameProcessor
                             );
                 }
 
-
+                if(frame_counter % 1200 == 0)
+                {
+                    LOG4CXX_INFO(logger_, "Core " << lcore_id_ << " Captured framed " << frame_counter);
+                }
                 frame_counter++;
             }
             in_capture_ = false;
 
-            rte_delay_ms(100);
+            //rte_delay_ms(100);
 
 
         }
