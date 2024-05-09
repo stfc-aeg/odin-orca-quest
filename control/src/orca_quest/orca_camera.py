@@ -1,16 +1,21 @@
 from odin_data.ipc_channel import IpcChannel
 from odin_data.ipc_message import IpcMessage
 
+from tornado.ioloop import PeriodicCallback
+
 from functools import partial
 import logging
 
 class OrcaCamera():
 
-    def __init__(self, endpoint, name):
+    def __init__(self, endpoint, name, status_bg_task_enable, status_bg_task_interval):
 
         self.endpoint = endpoint
         self.name = name
         self.msg_id = 0
+
+        self.status_bg_task_enable = status_bg_task_enable
+        self.status_bg_task_interval = status_bg_task_interval
 
         self.config = {}
         self.tree = {}
@@ -33,8 +38,16 @@ class OrcaCamera():
                     self.config[key], partial(self.set_config, param=key)
                 )  # Function uses key (the parameter) as argument via partial
 
-        # self.status = self.request_status()
-        self.tree['status'] = (lambda: self.request_status(), None)
+        self.status = self.request_status()
+        self.tree['status'] = self.status
+
+        self.tree['background_task'] = {
+            "interval": (lambda: self.status_bg_task_interval, self.set_task_interval),
+            "enable": (lambda: self.status_bg_task_enable, self.set_task_enable)
+        }
+
+        if self.status_bg_task_enable:
+            self.start_background_tasks()
 
     def send_command(self, value):
         """Compose a command message to be sent to the camera.
@@ -128,3 +141,36 @@ class OrcaCamera():
         """Return the next (incremented) message id."""
         self.msg_id += 1
         return self.msg_id
+
+    def status_ioloop_callback(self):
+        """Periodic callback task to update camera status."""
+        self.status = self.request_status()
+
+    def start_background_tasks(self):
+        logging.debug(f"Launching camera status update task for {self.name} camera with interval {self.status_bg_task_interval}.")
+        self.status
+
+        self.status_ioloop_task = PeriodicCallback(
+            self.status_ioloop_callback, (self.status_bg_task_interval * 1000)
+        )
+        self.status_ioloop_task.start()
+
+    def stop_background_tasks(self):
+        """Stop the background tasks."""
+        self.status_bg_task_enable = False
+        self.status_ioloop_task.stop()
+
+    def set_task_enable(self, enable):
+        """Set the background task enable - accordingly enable or disable the task."""
+        enable = bool(enable)
+
+        if enable != self.status_bg_task_enable:
+            if enable:
+                self.start_background_tasks()
+            else:
+                self.stop_background_tasks()
+
+    def set_task_interval(self, interval):
+        """Set the background task interval."""
+        logging.debug("Setting background task interval to %f", interval)
+        self.status_bg_task_interval = float(interval)

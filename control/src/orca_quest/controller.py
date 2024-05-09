@@ -12,7 +12,7 @@ class OrcaError(Exception):
 class OrcaController():
     """Class to consolidate ORCA-Quest camera controls"""
 
-    def __init__(self, num_cameras, endpoints, names):
+    def __init__(self, num_cameras, endpoints, names, status_bg_task_enable, status_bg_task_interval):
         """This constructor initialises the object and builds parameter trees."""
 
         # Internal variables
@@ -20,13 +20,16 @@ class OrcaController():
         camtrees = []
         tree = {}
 
+        self.status_bg_task_enable = status_bg_task_enable
+        self.status_bg_task_interval = status_bg_task_interval
+
         # Raise error if insufficient endpoints for cameras
         if len(endpoints) < num_cameras:
             raise OrcaError("Fewer endpoints defined than number of cameras in config.")
 
         for i in range(num_cameras):
             # For each desired camera, create OrcaCamera with name and endpoint
-            camera = OrcaCamera(name=names[i], endpoint=endpoints[i])
+            camera = OrcaCamera(endpoints[i], names[i], self.status_bg_task_enable, self.status_bg_task_interval)
 
             # Store in list of cameras and put tree in list of trees
             self.cameras.append(camera)

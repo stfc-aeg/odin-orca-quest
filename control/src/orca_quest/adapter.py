@@ -26,8 +26,13 @@ class OrcaAdapter(ApiAdapter):
             item.strip() for item in self.options.get('camera_name', 'camera_1').split(",")
         ]
 
+        status_bg_task_enable = bool(self.options.get('status_bg_task_enable', 1))
+        status_bg_task_interval = int(self.options.get('status_bg_task_interval', 1))
+
         # Create acquisition controller
-        self.camera = OrcaController(num_cameras, endpoints, names)
+        self.camera = OrcaController(num_cameras, endpoints, names,
+                                    status_bg_task_enable, status_bg_task_interval
+                                    )
 
     @response_types('application/json', default='application/json')
     def get(self, path, request):
