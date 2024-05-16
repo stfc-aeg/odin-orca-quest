@@ -72,6 +72,8 @@ namespace FrameProcessor
 
         bool get_status(const std::string param_prefix, OdinData::IpcMessage& config_reply);
 
+
+
     private:
         char* last_frame_;
         bool recording_;
@@ -85,6 +87,8 @@ namespace FrameProcessor
         OrcaQuestCameraState camera_state_;
 
         LoggerPtr logger_;
+
+        friend class OrcaCaptureCore;
     };
 }
 #endif

@@ -23,15 +23,12 @@ namespace FrameProcessor {
     // Definition of state machine events
     struct EventConnect : sc::event<EventConnect> {};
     struct EventDisconnect : sc::event<EventDisconnect> {};
-    struct EventArm : sc::event<EventArm> {};
-    struct EventDisarm : sc::event<EventDisarm> {};
     struct EventStartCapture : sc::event<EventStartCapture> {};
     struct EventEndCapture : sc::event<EventEndCapture> {};
 
     // Forward declaration of states
     struct Off;
     struct Connected;
-    struct Armed;
     struct Capturing;
 
     // OrcaQuestCameraState - state machine for the OrcaQuest camera controller
@@ -43,8 +40,6 @@ namespace FrameProcessor {
             CommandUnknown = -1,
             CommandConnect,
             CommandDisconnect,
-            CommandArm,
-            CommandDisarm,
             CommandStartCapture,
             CommandEndCapture
         };
@@ -55,7 +50,6 @@ namespace FrameProcessor {
             StateUnknown = -1,
             StateOff,
             StateConnected,
-            StateArmed,
             StateCapturing
         };
 
@@ -126,27 +120,13 @@ namespace FrameProcessor {
         // Defines reactions to legal events
         typedef mpl::list<
             sc::custom_reaction<EventDisconnect>,
-            sc::custom_reaction<EventArm>
+            sc::custom_reaction<EventStartCapture>
         > reactions;
 
         Connected(my_context ctx) : my_base(ctx) {};
         sc::result react(const EventDisconnect&);
-        sc::result react(const EventArm&);
-        OrcaQuestCameraState::StateType state_type(void) const { return OrcaQuestCameraState::StateType::StateConnected; }
-    };
-
-    struct Armed : IStateInfo, sc::state<Armed, OrcaQuestCameraState>
-    {
-        // Defines reactions to legal events
-        typedef mpl::list<
-            sc::custom_reaction<EventDisarm>,
-            sc::custom_reaction<EventStartCapture>
-        > reactions;
-
-        Armed(my_context ctx) : my_base(ctx) {};
-        sc::result react(const EventDisarm&);
         sc::result react(const EventStartCapture&);
-        OrcaQuestCameraState::StateType state_type(void) const { return OrcaQuestCameraState::StateType::StateArmed; }
+        OrcaQuestCameraState::StateType state_type(void) const { return OrcaQuestCameraState::StateType::StateConnected; }
     };
 
     struct Capturing : IStateInfo, sc::state<Capturing, OrcaQuestCameraState>

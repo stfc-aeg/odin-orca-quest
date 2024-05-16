@@ -14,8 +14,6 @@ OrcaQuestCameraController::OrcaQuestCameraController(ProtocolDecoder* decoder) :
     camera_state_.initiate();
     std::string connect = "connect";
     execute_command(connect);
-    std::string arm = "arm";
-    execute_command(arm);
     std::string capture = "capture";
     execute_command(capture);
 }
@@ -54,30 +52,18 @@ bool OrcaQuestCameraController::execute_command(std::string& command)
 bool OrcaQuestCameraController::connect()
 {
     camera_.api_init();
-    bool connected = camera_.connect(camera_config_.camera_num_);
+    bool connected = camera_.connect(camera_config_.camera_number_);
+    camera_.attach_buffer(10);
+    camera_.prepare_capture(camera_config_.image_timeout_);
     // Return the connection status
     return connected;
 }
 
 bool OrcaQuestCameraController::disconnect()
 {
+    camera_.disarm();
     camera_.disconnect();
     // Return the disconnection status
-    return true;
-}
-
-bool OrcaQuestCameraController::arm_camera()
-{
-    camera_.attach_buffer(10);
-    camera_.prepare_capture(camera_config_.image_timeout_);
-    // Return the arm status
-    return true;
-}
-
-bool OrcaQuestCameraController::disarm_camera()
-{
-    camera_.disarm();
-    // Return the disarm status
     return true;
 }
 
@@ -132,7 +118,7 @@ void OrcaQuestCameraController::configure(OdinData::IpcMessage& config_msg, Odin
 bool OrcaQuestCameraController::update_configuration(OdinData::ParamContainer::Document& params)
 {
 
-    // unsigned int camera_num_;     //!< Camera number as enumerated by driver
+    // unsigned int camera_number_;     //!< Camera number as enumerated by driver
     // double image_timeout_;        //!< Image acquisition timeout in seconds
     // unsigned int num_frames_;     //!< Number of frames to acquire, 0 = no limit
     // unsigned int timestamp_mode_; //!< Camera timestamp mode
@@ -145,11 +131,11 @@ bool OrcaQuestCameraController::update_configuration(OdinData::ParamContainer::D
     new_config.update(params);
 
 
-    if (new_config.camera_num_ != camera_config_.camera_num_)
+    if (new_config.camera_number_ != camera_config_.camera_number_)
     {
-        std::cout << "Updated camera number from: " << camera_config_.camera_num_ << " to: " << new_config.camera_num_ << std::endl;
+        std::cout << "Updated camera number from: " << camera_config_.camera_number_ << " to: " << new_config.camera_number_ << std::endl;
         // Update camera index
-        camera_config_.camera_num_ = new_config.camera_num_;
+        camera_config_.camera_number_ = new_config.camera_number_;
     }
 
     if (new_config.image_timeout_ != camera_config_.image_timeout_)
@@ -202,6 +188,8 @@ bool OrcaQuestCameraController::request_configuration(const std::string param_pr
 
 bool OrcaQuestCameraController::get_status(const std::string param_prefix, OdinData::IpcMessage& config_reply)
 {
+
+    camera_status_.camera_status_ = camera_state_.current_state_name();
 
     OdinData::ParamContainer::Document camera_status;
 

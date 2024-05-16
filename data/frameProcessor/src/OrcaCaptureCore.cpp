@@ -133,23 +133,6 @@ namespace FrameProcessor
         uint64_t frame_counter = 0;
         uint64_t dropped_frames_ = 0;
 
-        net::io_context ioc;
-        tcp::endpoint endpoint(tcp::v4(), 9002);
-        size_t buffer_size = 5;
-
-        JPEGWebSocketServer server(ioc, endpoint, buffer_size);
-        
-        
-        boost::thread t([&ioc]() {
-            try {
-                ioc.run();
-            } catch (const std::exception& e) {
-                std::cerr << "Exception: " << e.what() << "\n";
-            }
-        });
-        
-
-
         LOG4CXX_INFO(logger_, "Core " << lcore_id_ << " Connecting to camera\n");
 
         bool passed = false;
@@ -167,12 +150,10 @@ namespace FrameProcessor
             }
 
             
-
             if(orca_controller_->get_recording())
             {
                 // Recording is set to true, capture images
                 in_capture_ = true;
-
 
                 frame_src = orca_controller_->get_frame();
 
@@ -187,7 +168,7 @@ namespace FrameProcessor
                     clear_frames_ring_, (void **) &current_super_frame_buffer_
                 )) != 0)
                 {
-                    // If a memory location cannot be found start dropping this frame
+                    // Memory location cannot be found start dropping this frame
                     dropped_frames_++;
                     LOG4CXX_WARN(logger_,
                             "dropping frame: " << frame_counter);
@@ -208,24 +189,6 @@ namespace FrameProcessor
                     // Copy the frame data to the frame struct
                     rte_memcpy(decoder_->get_image_data_start(current_super_frame_buffer_), frame_src, frame_size);
 
-                    if(frame_counter % 60 == 0)
-                    {
-
-                        server.pushFrame((uint16_t*) decoder_->get_image_data_start(current_super_frame_buffer_), frame_size/2);
-
-                    }
-
-                    // if(frame_counter % 10)
-                    // {
-                    //     uint16_t* frame_data_fake = (uint16_t*) malloc(frame_size);
-                    //     memset(frame_data_fake, 0x0f, frame_size);
-
-                    //     server.pushFrame(frame_data_fake, frame_size/2);
-
-                    //     free(frame_data_fake);
-
-                    // }
-
                     rte_ring_enqueue(
                                 downstream_rings_[
                                     decoder_->get_super_frame_number(current_super_frame_buffer_) % 
@@ -238,13 +201,10 @@ namespace FrameProcessor
                 {
                     LOG4CXX_INFO(logger_, "Core " << lcore_id_ << " Captured framed " << frame_counter);
                 }
+                orca_controller_->camera_status_.frame_number_ = frame_counter;
                 frame_counter++;
             }
             in_capture_ = false;
-
-            //rte_delay_ms(100);
-
-
         }
         return true;
     }

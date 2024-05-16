@@ -7,9 +7,9 @@ namespace FrameProcessor
 {
     namespace Defaults
     {
-        const unsigned int default_camera_num = 0; 
-        const double default_image_timeout = 10.0; 
-        const unsigned int default_num_frames = 0; 
+        const unsigned int default_camera_number = 0; 
+        const double default_image_timeout = 100; 
+        const unsigned int default_number_frames = 0; 
         const unsigned int default_timestamp_mode = 2;
     }
 
@@ -26,9 +26,9 @@ namespace FrameProcessor
 
             OrcaQuestCameraConfiguration() :
                 ParamContainer(),
-                camera_num_(Defaults::default_camera_num),
+                camera_number_(Defaults::default_camera_number),
                 image_timeout_(Defaults::default_image_timeout),
-                num_frames_(Defaults::default_num_frames),
+                num_frames_(Defaults::default_number_frames),
                 timestamp_mode_(Defaults::default_timestamp_mode),
                 exposure_time_(0.0),
                 frame_rate_(0.0)
@@ -66,7 +66,7 @@ namespace FrameProcessor
 
             virtual void bind_params(void)
             {
-                bind_param<unsigned int>(camera_num_, "camera_num");
+                bind_param<unsigned int>(camera_number_, "camera_number");
                 bind_param<double>(image_timeout_, "image_timeout");
                 bind_param<unsigned int>(num_frames_, "num_frames");
                 bind_param<unsigned int>(timestamp_mode_, "timestamp_mode");
@@ -74,7 +74,8 @@ namespace FrameProcessor
                 bind_param<double>(frame_rate_, "frame_rate");
             }
 
-            unsigned int camera_num_;     //!< Camera number as enumerated by driver
+            unsigned int camera_number_;     //!< Camera number as enumerated by driver
+            unsigned int frame_number_;
             double image_timeout_;        //!< Image acquisition timeout in seconds
             unsigned int num_frames_;     //!< Number of frames to acquire, 0 = no limit
             unsigned int timestamp_mode_; //!< Camera timestamp mode

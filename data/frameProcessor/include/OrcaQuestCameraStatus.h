@@ -71,6 +71,7 @@ namespace FrameProcessor
             //! Allow the OrcaQuestCameraController class direct access to config parameters
             friend class OrcaQuestCameraController;
             friend class OrcaQuestCamera;
+            friend class OrcaCaptureCore;
 
     };
 }

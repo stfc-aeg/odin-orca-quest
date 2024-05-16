@@ -11,8 +11,6 @@ OrcaQuestCameraState::OrcaQuestCameraState(OrcaQuestCameraController* controller
     // Define custom type information for naming state transition events
     EventConnect::custom_static_type_ptr("connect");
     EventDisconnect::custom_static_type_ptr("disconnect");
-    EventArm::custom_static_type_ptr("arm");
-    EventDisarm::custom_static_type_ptr("disarm");
     EventStartCapture::custom_static_type_ptr("start_capture");
     EventEndCapture::custom_static_type_ptr("end_capture");
 }
@@ -51,12 +49,6 @@ void OrcaQuestCameraState::execute_command(OrcaQuestCameraState::CommandType com
             break;
         case CommandDisconnect:
             process_event(EventDisconnect());
-            break;
-        case CommandArm:
-            process_event(EventArm());
-            break;
-        case CommandDisarm:
-            process_event(EventDisarm());
             break;
         case CommandStartCapture:
             process_event(EventStartCapture());
@@ -128,20 +120,17 @@ OrcaQuestCameraState::StateType OrcaQuestCameraState::current_state(void)
 
 void OrcaQuestCameraState::init_command_type_map(void)
 {
-    command_type_map_.insert(CommandTypeMapEntry("connect",       CommandConnect));
-    command_type_map_.insert(CommandTypeMapEntry("disconnect",    CommandDisconnect));
-    command_type_map_.insert(CommandTypeMapEntry("arm",           CommandArm));
-    command_type_map_.insert(CommandTypeMapEntry("disarm",        CommandDisarm));
-    command_type_map_.insert(CommandTypeMapEntry("capture", CommandStartCapture));
-    command_type_map_.insert(CommandTypeMapEntry("discapture",   CommandEndCapture));
+    command_type_map_.insert(CommandTypeMapEntry("connect",    CommandConnect));
+    command_type_map_.insert(CommandTypeMapEntry("disconnect", CommandDisconnect));
+    command_type_map_.insert(CommandTypeMapEntry("capture",    CommandStartCapture));
+    command_type_map_.insert(CommandTypeMapEntry("discapture", CommandEndCapture));
 }
 
 void OrcaQuestCameraState::init_state_type_map(void)
 {
-    state_type_map_.insert(StateTypeMapEntry("disconnected",        StateOff));
-    state_type_map_.insert(StateTypeMapEntry("connected",  StateConnected));
-    state_type_map_.insert(StateTypeMapEntry("armed",      StateArmed));
-    state_type_map_.insert(StateTypeMapEntry("capturing",  StateCapturing));
+    state_type_map_.insert(StateTypeMapEntry("disconnected", StateOff));
+    state_type_map_.insert(StateTypeMapEntry("connected",    StateConnected));
+    state_type_map_.insert(StateTypeMapEntry("capturing",    StateCapturing));
 }
 
 sc::result Off::react(const EventConnect&)
@@ -170,33 +159,7 @@ sc::result Connected::react(const EventDisconnect&)
     }
 }
 
-sc::result Connected::react(const EventArm&)
-{
-    if (outermost_context().controller_->arm_camera())
-    {
-        return transit<Armed>();
-    }
-    else
-    {
-        // Return discard_event() if the arm operation fails
-        return discard_event();
-    }
-}
-
-sc::result Armed::react(const EventDisarm&)
-{
-    if (outermost_context().controller_->disarm_camera())
-    {
-        return transit<Connected>();
-    }
-    else
-    {
-        // Return discard_event() if the disarm operation fails
-        return discard_event();
-    }
-}
-
-sc::result Armed::react(const EventStartCapture&)
+sc::result Connected::react(const EventStartCapture&)
 {
     if (outermost_context().controller_->start_capture())
     {
@@ -213,7 +176,7 @@ sc::result Capturing::react(const EventEndCapture&)
 {
     if (outermost_context().controller_->end_capture())
     {
-        return transit<Armed>();
+        return transit<Connected>();
     }
     else
     {

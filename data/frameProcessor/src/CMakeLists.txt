@@ -9,7 +9,6 @@ include_directories(
         ${LOG4CXX_INCLUDE_DIRS}/..
         ${ZEROMQ_INCLUDE_DIRS}
         ${BLOSC_INCLUDE_DIR}
-        ${OpenCV_INCLUDE_DIRS}
 )
 
 # Add library for OrcaQuest plugin
@@ -20,18 +19,16 @@ add_library(OrcaQuestPlugin SHARED
         OrcaControlCore.cpp
         OrcaQuestCameraController.cpp
         OrcaQuestCameraStateMachine.cpp
-        JPEGWebSocketServer.cpp
 )
 
 find_library(DCAMAPI_LIBRARY NAMES dcamapi)
 
-find_package( OpenCV REQUIRED )
 
 target_compile_options(OrcaQuestPlugin PRIVATE ${LIBDPDK_CFLAGS})
 target_link_directories(OrcaQuestPlugin PRIVATE ${ODINDATA_LIBRARY_DIR} ${LIBDPDK_LIBRARY_DIRS})
 target_link_libraries(OrcaQuestPlugin
         PRIVATE OdinDataDpdk rte_eal rte_kvargs rte_telemetry
-        ${LIBDPDK_LDFLAGS} ${BLOSC_LIBRARIES} ${DCAMAPI_LIBRARY} ${OpenCV_LIBS}
+        ${LIBDPDK_LDFLAGS} ${BLOSC_LIBRARIES} ${DCAMAPI_LIBRARY}
 )
 
 get_target_property(PLUGIN_INSTALL_RPATH OrcaQuestPlugin INSTALL_RPATH)
