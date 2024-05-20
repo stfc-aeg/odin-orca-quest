@@ -15,9 +15,6 @@ class OrcaAdapter(ApiAdapter):
 
         super(OrcaAdapter, self).__init__(**kwargs)
 
-        # Parse options
-        num_cameras = int(self.options.get('num_cameras', 1))
-
         # Split on comma, remove whitespace if it exists
         endpoints = [
             item.strip() for item in self.options.get('camera_endpoint', None).split(",")
@@ -30,7 +27,7 @@ class OrcaAdapter(ApiAdapter):
         status_bg_task_interval = int(self.options.get('status_bg_task_interval', 1))
 
         # Create acquisition controller
-        self.camera = OrcaController(num_cameras, endpoints, names,
+        self.camera = OrcaController(endpoints, names,
                                     status_bg_task_enable, status_bg_task_interval
                                     )
 
