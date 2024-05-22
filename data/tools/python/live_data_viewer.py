@@ -111,7 +111,7 @@ if __name__ == '__main__':
 
     config_pipe_parent, config_pipe_child = Pipe()
 
-    viewer = LiveDataViewer('tcp://192.168.0.31:5020', config_pipe=config_pipe_child)
+    viewer = LiveDataViewer('tcp://localhost:5020', config_pipe=config_pipe_child)
     image_queue = Queue(maxsize=1)
 
     gui_process = Process(target=create_gui, args=(config_pipe_parent,))

@@ -14,8 +14,6 @@ OrcaQuestCameraController::OrcaQuestCameraController(ProtocolDecoder* decoder) :
     camera_state_.initiate();
     std::string connect = "connect";
     execute_command(connect);
-    std::string capture = "capture";
-    execute_command(capture);
 }
 
 // Destructor
@@ -69,6 +67,7 @@ bool OrcaQuestCameraController::disconnect()
 
 bool OrcaQuestCameraController::start_capture()
 {
+    camera_status_.frame_number_ = 0;
     recording_ = true;
     // Return the start capture status
     return true;
@@ -170,7 +169,73 @@ bool OrcaQuestCameraController::update_configuration(OdinData::ParamContainer::D
         // Update frame rate
         //camera_.set_property(0x001F0110, new_config.frame_rate_);
     }
-    return true;
+
+
+    if (new_config.trigger_source_ != camera_config_.trigger_source_)
+    {
+        std::cout << "Updated trigger source from: " << camera_config_.trigger_source_ << " to: " << new_config.trigger_source_ << std::endl;
+        // Update frame rate
+        if (!camera_.set_property(0x00100110, new_config.trigger_source_))
+        {
+            // Check if there was an error setting the camera property
+            return false;
+        }
+        camera_config_.trigger_source_ = new_config.trigger_source_;
+    }
+
+
+    if (new_config.trigger_active_ != camera_config_.trigger_active_)
+    {
+        std::cout << "Updated trigger active from: " << camera_config_.trigger_active_ << " to: " << new_config.trigger_active_ << std::endl;
+        // Update frame rate
+        if (!camera_.set_property(0x00100120, new_config.trigger_active_))
+        {
+            // Check if there was an error setting the camera property
+            return false;
+        }
+        camera_config_.trigger_active_ = new_config.trigger_active_;
+    }
+
+
+    if (new_config.trigger_mode_ != camera_config_.trigger_mode_)
+    {
+        std::cout << "Updated trigger mode from: " << camera_config_.trigger_mode_ << " to: " << new_config.trigger_mode_ << std::endl;
+        // Update frame rate
+        
+        if (!camera_.set_property(0x00100210, new_config.trigger_mode_))
+        {
+            // Check if there was an error setting the camera property
+            return false;
+        }
+    }
+
+
+    if (new_config.trigger_polarity_ != camera_config_.trigger_polarity_)
+    {
+        std::cout << "Updated trigger polarity from: " << camera_config_.trigger_polarity_ << " to: " << new_config.trigger_polarity_ << std::endl;
+        // Update trigger polarity
+        
+        if (!camera_.set_property(0x00100220, new_config.trigger_polarity_))
+        {
+            // Check if there was an error setting the camera property
+            return false;
+        }
+    }
+
+    if (new_config.trigger_connector_ != camera_config_.trigger_connector_)
+    {
+        std::cout << "Updated trigger connector from: " << camera_config_.trigger_connector_ << " to: " << new_config.trigger_connector_ << std::endl;
+        // Update trigger connector
+        
+        if (!camera_.set_property(0x00100230, new_config.trigger_connector_))
+        {
+            // Check if there was an error setting the camera property
+            return false;
+        }
+    }
+
+
+    return true;        
 }
 
 bool OrcaQuestCameraController::request_configuration(const std::string param_prefix, OdinData::IpcMessage& config_reply)

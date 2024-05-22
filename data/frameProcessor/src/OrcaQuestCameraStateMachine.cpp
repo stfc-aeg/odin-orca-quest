@@ -123,7 +123,7 @@ void OrcaQuestCameraState::init_command_type_map(void)
     command_type_map_.insert(CommandTypeMapEntry("connect",    CommandConnect));
     command_type_map_.insert(CommandTypeMapEntry("disconnect", CommandDisconnect));
     command_type_map_.insert(CommandTypeMapEntry("capture",    CommandStartCapture));
-    command_type_map_.insert(CommandTypeMapEntry("discapture", CommandEndCapture));
+    command_type_map_.insert(CommandTypeMapEntry("end_capture", CommandEndCapture));
 }
 
 void OrcaQuestCameraState::init_state_type_map(void)

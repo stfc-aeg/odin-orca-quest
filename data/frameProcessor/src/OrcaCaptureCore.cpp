@@ -130,7 +130,6 @@ namespace FrameProcessor
         uint64_t frame_size = decoder_->get_frame_bit_depth() * decoder_->get_frame_x_resolution() * decoder_->get_frame_y_resolution();
 
 
-        uint64_t frame_counter = 0;
         uint64_t dropped_frames_ = 0;
 
         LOG4CXX_INFO(logger_, "Core " << lcore_id_ << " Connecting to camera\n");
@@ -149,60 +148,61 @@ namespace FrameProcessor
                 continue;
             }
 
+
+            // Check camera is recording
             
-            if(orca_controller_->get_recording())
+            if(orca_controller_->get_recording() && 
+                // Check if running forever
+                (orca_controller_->camera_config_.num_frames_ == 0 || 
+                // Check frame is in acquisition
+                orca_controller_->camera_status_.frame_number_ < orca_controller_->camera_config_.num_frames_))
             {
                 // Recording is set to true, capture images
                 in_capture_ = true;
 
                 frame_src = orca_controller_->get_frame();
 
-                if(frame_src == nullptr)
+                if(frame_src != nullptr)
                 {
-                    LOG4CXX_WARN(logger_,
-                            "Got NULLPTR for frame");
-                    break;
+                    if (unlikely(rte_ring_dequeue(
+                        clear_frames_ring_, (void **) &current_super_frame_buffer_
+                    )) != 0)
+                    {
+                        // Memory location cannot be found start dropping this frame
+                        dropped_frames_++;
+                        LOG4CXX_WARN(logger_,
+                                "dropping frame: " << orca_controller_->camera_status_.frame_number_);
+                    }
+                    else
+                    {
+                        // Zero out the frame header to clear old data
+                        memset(current_super_frame_buffer_, 0, decoder_->get_frame_buffer_size());
+
+                        // Set the frame number and start time in the header
+                        decoder_->set_super_frame_number(current_super_frame_buffer_, orca_controller_->camera_status_.frame_number_);
+                        decoder_->set_super_frame_start_time(
+                            current_super_frame_buffer_, rte_get_tsc_cycles()
+                        );
+
+                        current_frame_header_ = decoder_->get_frame_header(current_super_frame_buffer_, 0);
+
+                        // Copy the frame data to the frame struct
+                        rte_memcpy(decoder_->get_image_data_start(current_super_frame_buffer_), frame_src, frame_size);
+
+                        rte_ring_enqueue(
+                                    downstream_rings_[
+                                        decoder_->get_super_frame_number(current_super_frame_buffer_) % 
+                                        config_.num_downstream_cores
+                                    ], current_super_frame_buffer_
+                                );
+                    }
+
+                    if(orca_controller_->camera_status_.frame_number_ % 1000 == 0)
+                    {
+                        LOG4CXX_INFO(logger_, "Core " << lcore_id_ << " Captured framed " << orca_controller_->camera_status_.frame_number_);
+                    }
+                    orca_controller_->camera_status_.frame_number_++;
                 }
-                
-                if (unlikely(rte_ring_dequeue(
-                    clear_frames_ring_, (void **) &current_super_frame_buffer_
-                )) != 0)
-                {
-                    // Memory location cannot be found start dropping this frame
-                    dropped_frames_++;
-                    LOG4CXX_WARN(logger_,
-                            "dropping frame: " << frame_counter);
-                }
-                else
-                {
-                    // Zero out the frame header to clear old data
-                    memset(current_super_frame_buffer_, 0, decoder_->get_frame_buffer_size());
-
-                    // Set the frame number and start time in the header
-                    decoder_->set_super_frame_number(current_super_frame_buffer_, frame_counter);
-                    decoder_->set_super_frame_start_time(
-                        current_super_frame_buffer_, rte_get_tsc_cycles()
-                    );
-
-                    current_frame_header_ = decoder_->get_frame_header(current_super_frame_buffer_, 0);
-
-                    // Copy the frame data to the frame struct
-                    rte_memcpy(decoder_->get_image_data_start(current_super_frame_buffer_), frame_src, frame_size);
-
-                    rte_ring_enqueue(
-                                downstream_rings_[
-                                    decoder_->get_super_frame_number(current_super_frame_buffer_) % 
-                                    config_.num_downstream_cores
-                                ], current_super_frame_buffer_
-                            );
-                }
-
-                if(frame_counter % 1200 == 0)
-                {
-                    LOG4CXX_INFO(logger_, "Core " << lcore_id_ << " Captured framed " << frame_counter);
-                }
-                orca_controller_->camera_status_.frame_number_ = frame_counter;
-                frame_counter++;
             }
             in_capture_ = false;
         }

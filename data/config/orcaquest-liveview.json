@@ -107,7 +107,7 @@
                 "path": "/tmp/"
             },
             "frames": 100,
-            "acquisition_id": "test_1",
+            "acquisition_id": "External_trig",
             "write": true,
             "timeout_timer_period": 10000,
             "process": {

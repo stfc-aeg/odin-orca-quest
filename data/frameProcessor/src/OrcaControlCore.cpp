@@ -51,7 +51,7 @@ namespace FrameProcessor
         // Bind the IPC channel
         // TODO: Move this to a config param
 
-        Orca_Ctrl_Channel_.bind("tcp://0.0.0.0:9001");
+        Orca_Ctrl_Channel_.bind("tcp://192.168.0.31:9001");
 
 
         LOG4CXX_INFO(logger_, "Core " << lcore_id_ << " Bound IPC channel to port 9001");
@@ -67,8 +67,6 @@ namespace FrameProcessor
         while (likely(run_lcore_))
         {
             // Do fast loop
-
-
             new_msg = Orca_Ctrl_Channel_.poll(100);
 
             if(new_msg)
@@ -98,9 +96,6 @@ namespace FrameProcessor
                     ctrl_reply.set_msg_type(OdinData::IpcMessage::MsgTypeAck);
                     ctrl_reply.set_msg_val(req_val);
 
-                    printf("Incoming IPC meg:\n");
-                    printf("id: %d, type:%d, val: %d\n", ctrl_req.get_msg_id(), req_type, req_val);
-
                     // Handle the request according to its type
                     switch (req_type)
                     {
@@ -128,9 +123,9 @@ namespace FrameProcessor
 
                         // Handle a status request command
                         case OdinData::IpcMessage::MsgValCmdStatus:
-                            std::cout <<
-                            "Got camera control status request from client " << client_identity
-                                << " : " << ctrl_req_encoded << std::endl;
+                            // std::cout <<
+                            // "Got camera control status request from client " << client_identity
+                            //     << " : " << ctrl_req_encoded << std::endl;
                             OrcaQuestCameraController_->get_status(std::string(""), ctrl_reply);
                             break;
 
@@ -169,11 +164,6 @@ namespace FrameProcessor
                 // Send the encoded response back to the client
                 Orca_Ctrl_Channel_.send(ctrl_reply.encode(), 0, client_identity);
             }
-            else
-            {
-                rte_delay_ms(100);
-            }
-
         }
         return true;
     }

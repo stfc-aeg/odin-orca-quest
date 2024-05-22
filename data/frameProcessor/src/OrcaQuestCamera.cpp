@@ -1,13 +1,15 @@
 #include "OrcaQuestCamera.h"
 
 
-OrcaQuestCamera::OrcaQuestCamera() {
-}
+OrcaQuestCamera::OrcaQuestCamera():
+logger_(Logger::getLogger("FP.OrcaQuestCamera"))
+{}
+
 
 OrcaQuestCamera::~OrcaQuestCamera() {
     close();
     if (dcamapi_uninit() != DCAMERR_SUCCESS) {
-        std::cerr << "Failed to uninitialize DCAM API." << std::endl;
+        LOG4CXX_WARN(logger_,"Failed to uninitialize DCAM API.");
     }
 }
 
@@ -24,12 +26,12 @@ bool OrcaQuestCamera::api_init() {
 
     err_ = dcamapi_init(&api_init_param_);
     if (!failed(err_)) {
-        std::cout << "DCAM API initialized successfully." << std::endl;
+        LOG4CXX_INFO(logger_, "DCAM API initialized successfully.");
         return true;
     }
     else
     {
-        std::cout << "DCAM API failed to initialize." << std::endl;
+        LOG4CXX_WARN(logger_, "DCAM API failed to initialize.");
 
         char errtext[ 256 ];
 
@@ -43,7 +45,7 @@ bool OrcaQuestCamera::api_init() {
         
         err_ = dcamdev_getstring( orca_, &param );
 
-        printf( "FAILED: (DCAMERR)0x%08X %s", err_, errtext);
+        LOG4CXX_WARN(logger_, errtext);
         return false;
     }
 }
@@ -56,7 +58,7 @@ bool OrcaQuestCamera::connect(int index) {
 
     err_ = dcamdev_open(&device_handle_);
     if (failed(err_)) {
-        std::cout << "Failed to open connection to camera. Stopping." << std::endl;
+        LOG4CXX_WARN(logger_, "Failed to open connection to camera. Stopping.");
         dcamapi_uninit();
         return false;
     }
@@ -68,13 +70,13 @@ bool OrcaQuestCamera::connect(int index) {
 
     err_ = dcamwait_open(&wait_open_handle_);
     if (failed(err_)) {
-        std::cout << "Failed to open wait handle. Stopping." << std::endl;
+        LOG4CXX_WARN(logger_, "Failed to open wait handle. Stopping.");
         dcamapi_uninit();
         return false;
     }
 
     orcaWait_ = wait_open_handle_.hwait;
-    std::cout << "Connected to camera." << std::endl;
+    LOG4CXX_INFO(logger_, "Connected to camera.");
     return true;
 }
 
@@ -92,13 +94,13 @@ bool OrcaQuestCamera::disarm() {
 
     err_ = dcamcap_stop(orca_);
     if (failed(err_)) {
-        std::cout << "Failed to stop capture capture." << std::endl;
+        LOG4CXX_WARN(logger_, "Failed to stop capture capture.");
         return false;
     }
     
     err_ = dcambuf_release(orca_);
     if (failed(err_)) {
-        std::cout << "Failed to release buffers capture capture." << std::endl;
+        LOG4CXX_WARN(logger_, "Failed to release buffers capture capture.");
         return false;
     }
     return true;
@@ -109,10 +111,10 @@ bool OrcaQuestCamera::attach_buffer(int32 numFrames) {
     
     err_ = dcambuf_alloc(orca_, numFrames);
     if (failed(err_)) {
-        std::cout << "Failed to alloc buffer for " << numFrames << " frames." << std::endl;
+        LOG4CXX_WARN(logger_, "Failed to alloc buffer for " << numFrames << " frames.");
         return false;
     }
-    std::cout << "Attached " << numFrames << " buffers to framegrabber." << std::endl;
+    LOG4CXX_INFO(logger_, "Attached " << numFrames << " buffers to framegrabber.");
     return true;
 }
 
@@ -146,10 +148,10 @@ bool OrcaQuestCamera::prepare_capture(int32 frameTimeout) {
 
     err_ = dcamcap_start(orca_, DCAMCAP_START_SEQUENCE);
     if (failed(err_)) {
-        std::cout << "Failed to start capture." << std::endl;
+        LOG4CXX_WARN(logger_,"Failed to start capture.");
         return false;
     }
-    std::cout << "Camera armed for capture." << std::endl;
+    LOG4CXX_INFO(logger_, "Camera armed for capture.");
     return true;
 }
 
@@ -158,17 +160,15 @@ char* OrcaQuestCamera::capture_frame() {
 
     err_ = dcamwait_start(orcaWait_, &frameReady_Waiter_);
     if (failed(err_)) {
-        std::cout << "Error capturing frame" << std::endl;
+        LOG4CXX_WARN(logger_,"Error capturing frame");
         return NULL;
     }
 
     err_ = dcambuf_lockframe(orca_, &frameBuffer_);
     if (failed(err_)) {
-        std::cout << "Error locking frame" << std::endl;
+        LOG4CXX_WARN(logger_,"Error locking frame");
         return NULL;
     }
-
-    //std::cout << "Frame captured." << std::endl;
 
     return reinterpret_cast<char*>(frameBuffer_.buf);
 }
@@ -203,12 +203,8 @@ void OrcaQuestCamera::close() {
 
 bool OrcaQuestCamera::check_dcam_err(DCAMERR err, const std::string& action) {
     if (err != DCAMERR_SUCCESS) {
-        std::cerr << "Error during " << action << ": " << err << std::endl;
+        LOG4CXX_WARN(logger_,"Error during " << action << ": " << err);
         return false;
     }
     return true;
 }
-
-// char* OrcaQuestCamera::get_frame_pointer() {
-//     return reinterpret_cast<char*>(frameBuffer_.buf);
-// }

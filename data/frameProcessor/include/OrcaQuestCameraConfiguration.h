@@ -11,6 +11,12 @@ namespace FrameProcessor
         const double default_image_timeout = 100; 
         const unsigned int default_number_frames = 0; 
         const unsigned int default_timestamp_mode = 2;
+
+        const int default_trigger_source = 1;
+        const int default_trigger_mode = 1;
+        const int default_trigger_active = 1;
+        const int default_trigger_polarity = 1;
+        const int default_trigger_connector = 2;
     }
 
     class OrcaQuestCameraConfiguration : public OdinData::ParamContainer
@@ -31,7 +37,12 @@ namespace FrameProcessor
                 num_frames_(Defaults::default_number_frames),
                 timestamp_mode_(Defaults::default_timestamp_mode),
                 exposure_time_(0.0),
-                frame_rate_(0.0)
+                frame_rate_(0.0),
+                trigger_source_(Defaults::default_trigger_source),
+                trigger_active_(Defaults::default_trigger_mode),
+                trigger_mode_(Defaults::default_trigger_active),
+                trigger_polarity_(Defaults::default_trigger_polarity),
+                trigger_connector_(Defaults::default_trigger_connector)
             {
                 // Bind the parameters in the container
                 bind_params();
@@ -72,6 +83,11 @@ namespace FrameProcessor
                 bind_param<unsigned int>(timestamp_mode_, "timestamp_mode");
                 bind_param<double>(exposure_time_, "exposure_time");
                 bind_param<double>(frame_rate_, "frame_rate");
+                bind_param<int>(trigger_source_, "trigger_source");
+                bind_param<int>(trigger_active_, "trigger_active");
+                bind_param<int>(trigger_mode_, "trigger_mode");
+                bind_param<int>(trigger_polarity_, "trigger_polarity");
+                bind_param<int>(trigger_connector_, "trigger_connector");
             }
 
             unsigned int camera_number_;     //!< Camera number as enumerated by driver
@@ -82,9 +98,54 @@ namespace FrameProcessor
             double exposure_time_;        //!< Exposure time in seconds
             double frame_rate_;           //!< Frame rate in Hertz
 
-            //! Allow the OrcaQuestCameraController class direct access to config parameters
+
+            // TRIGGER SOURCE	            Internal	|        Software	            External
+            // TRIGGER ACTIVE	            -	        |   Edge	Level	Pulse	|   Edge	Level	Pulse
+            //             	   NORMAL	    OK	        |   OK	    OK	    Few	    |   OK	    OK	    Few
+            // TRIGGER MODE    PIV	        NG	        |   OK	    None	None	|   OK	    None   None
+            //                 START	    NG	        |   OK	    NG	    NG	    |   OK	    NG	    NG
+            //
+            // OK:	    The combination is supported.
+            // NG:	    The combination is not defined in DCAM-API
+            // Few:	    The combination is defined but a few cameras support.
+            // None:    The combination can be defined but no cameras support it.
+
+
+            // Setting for triggering source for frame capture
+            // 1 = internal
+            // 2 = External
+            // 3 = Software
+            // 4 = Master Pulse
+            int trigger_source_;
+
+            // Setting for when trigger activates
+            // 1 = Edge
+            // 2 = Level
+            // 3 = Pulse? /* reserved */
+            int trigger_active_;
+
+            // Setting for triggering mode
+            // 1 = Normal
+            // 2 = PIV
+            // 3 = START
+            int trigger_mode_;
+
+            // Setting for external trigger polarity
+            // 1 = Falling edge or LOW level
+            // 2 = Rising edge or HIGH level
+            int trigger_polarity_;
+
+            // Setting for external trigger connector
+            // 1 = BNC
+            // 2 = INTERFACE
+            // 3 = MULTI
+            int trigger_connector_;
+
+
+            // Allow the OrcaQuestCameraController class direct access to config parameters
             friend class OrcaQuestCameraController;
             friend class OrcaQuestCamera;
+            friend class OrcaCaptureCore;
 
     };
 }

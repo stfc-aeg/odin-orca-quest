@@ -6,6 +6,11 @@
 #include <string>
 #include <cstring>
 
+#include <log4cxx/logger.h>
+using namespace log4cxx;
+using namespace log4cxx::helpers;
+#include <DebugLevelLogger.h>
+
 #include "console4.h"
 #include "dcamapi4.h"
 #include "dcamprop.h"
@@ -44,6 +49,8 @@ private:
     DCAMBUF_FRAME frameBuffer_;
     DCAMWAIT_START frameReady_Waiter_;
     DCAMCAP_TRANSFERINFO captransferinfo_;
+
+    LoggerPtr logger_;
 
     bool buffer_type_;
 
