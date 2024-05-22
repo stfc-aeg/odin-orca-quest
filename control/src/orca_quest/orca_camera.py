@@ -39,7 +39,9 @@ class OrcaCamera():
                 )  # Function uses key (the parameter) as argument via partial
 
         self.status = self.request_status()
-        self.tree['status'] = self.status
+        self.tree['status'] = {}
+        for key in self.status.keys():
+            self.tree['status'][key] = (lambda key=key: self.status[key], None)
 
         self.tree['background_task'] = {
             "interval": (lambda: self.status_bg_task_interval, self.set_task_interval),
@@ -90,7 +92,7 @@ class OrcaCamera():
 
         if not self.await_response():
             return False
-        self.request_status()  # Update status
+        self.status = self.request_status()  # Update status
         return True
 
     def request_config(self):
@@ -102,7 +104,7 @@ class OrcaCamera():
         self.camera.send(config_msg.encode())
         reply = self.await_response()
         if reply:
-            self.request_status()  # Update status
+            self.status = self.request_status()  # Update status
             return reply.attrs['params']['camera']
 
     def request_status(self):
