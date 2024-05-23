@@ -16,9 +16,12 @@ class OrcaCamera():
 
         self.status_bg_task_enable = status_bg_task_enable
         self.status_bg_task_interval = status_bg_task_interval
+        self.status = {}
 
         self.config = {}
         self.tree = {}
+
+        self.timeout_ms = 1000
 
         self.camera = IpcChannel(IpcChannel.CHANNEL_TYPE_DEALER)
         self.camera.connect(endpoint)
@@ -38,7 +41,7 @@ class OrcaCamera():
                     self.config[key], partial(self.set_config, param=key)
                 )  # Function uses key (the parameter) as argument via partial
 
-        self.status = self.request_status()
+        self.request_status()
         self.tree['status'] = {}
         for key in self.status.keys():
             self.tree['status'][key] = (lambda key=key: self.status[key], None)
@@ -61,7 +64,15 @@ class OrcaCamera():
                 "command": value
             }
         }
+        if value == "connect":
+            # Connecting often takes a few seconds
+            self.timeout_ms = 5000
+
         self.send_config_message(self.command_msg)
+        self.request_status()
+
+        if value == "connect":
+            self.timeout_ms = 1000  # Reset
 
     def set_config(self, value, param):
         """Update local storage of config values and send a command to the camera to update it.
@@ -79,7 +90,7 @@ class OrcaCamera():
         }
         self.send_config_message(self.command_msg)
 
-    def send_config_message(self, config):
+    def send_config_message(self, config, timeout_ms=1000):
         """Send a configuration message to a given camera.
         :param config: command message dictionary
         """
@@ -92,7 +103,6 @@ class OrcaCamera():
 
         if not self.await_response():
             return False
-        self.status = self.request_status()  # Update status
         return True
 
     def request_config(self):
@@ -104,22 +114,21 @@ class OrcaCamera():
         self.camera.send(config_msg.encode())
         reply = self.await_response()
         if reply:
-            self.status = self.request_status()  # Update status
             return reply.attrs['params']['camera']
 
     def request_status(self):
-        """Get and return the current status of a connected camera.
-        :return status: dictionary of current camera status"""
+        """Get the current status of a connected camera and update the class status variable."""
         status_msg = IpcMessage('cmd', 'status', id=self._next_msg_id())
         self.camera.send(status_msg.encode())
 
-        response = self.await_response(silence_reply=True)
-        if response:
-            return response.attrs['params']['status']
-        else:
-            return False
+        try:
+            response = self.await_response(silence_reply=True)
+            if response:
+                self.status = response.attrs['params']['status']
+        except:  # If there is an error, do not update the status
+            logging.debug(f"Could not fetch status for camera {self.camera.identity}, not updating.")
 
-    def await_response(self, timeout_ms=5000, silence_reply=False):
+    def await_response(self, timeout_ms=1000, silence_reply=False):
         """Await a response on the given camera.
         :param timeout_ms: timeout in milliseconds
         :param silence_reply: silence positive response logging if true. for frequent requests
@@ -136,7 +145,6 @@ class OrcaCamera():
             return reply
         else:
             logging.debug(f"No response received, or error occurred, from {self.camera.identity}")
-
             return False
 
     def _next_msg_id(self):
@@ -146,12 +154,10 @@ class OrcaCamera():
 
     def status_ioloop_callback(self):
         """Periodic callback task to update camera status."""
-        self.status = self.request_status()
+        self.request_status()
 
     def start_background_tasks(self):
         logging.debug(f"Launching camera status update task for {self.name} camera with interval {self.status_bg_task_interval}.")
-        self.status
-
         self.status_ioloop_task = PeriodicCallback(
             self.status_ioloop_callback, (self.status_bg_task_interval * 1000)
         )
