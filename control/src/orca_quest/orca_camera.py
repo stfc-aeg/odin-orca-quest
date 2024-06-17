@@ -128,7 +128,7 @@ class OrcaCamera():
         except:  # If there is an error, do not update the status
             logging.debug(f"Could not fetch status for camera {self.camera.identity}, not updating.")
 
-    def await_response(self, timeout_ms=1000, silence_reply=False):
+    def await_response(self, timeout_ms=100, silence_reply=False):
         """Await a response on the given camera.
         :param timeout_ms: timeout in milliseconds
         :param silence_reply: silence positive response logging if true. for frequent requests
