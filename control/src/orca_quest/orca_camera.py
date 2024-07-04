@@ -22,6 +22,7 @@ class OrcaCamera():
         self.tree = {}
 
         self.timeout_ms = 1000
+        self.error_consecutive = 0
 
         self.camera = IpcChannel(IpcChannel.CHANNEL_TYPE_DEALER)
         self.camera.connect(endpoint)
@@ -142,8 +143,10 @@ class OrcaCamera():
             if not silence_reply:
                 logging.info(f"Got response from {self.camera.identity}: {reply}")
 
+            self.error_consecutive = 0
             return reply
         else:
+            self.error_consecutive += 1
             logging.debug(f"No response received, or error occurred, from {self.camera.identity}")
             return False
 
@@ -154,9 +157,16 @@ class OrcaCamera():
 
     def status_ioloop_callback(self):
         """Periodic callback task to update camera status."""
+        if self.error_consecutive >= 10:
+            # After 10 consecutive errors, halt the background task
+            logging.debug("Multiple consecutive errors in camera response. Halting periodic request task.")
+            self.stop_background_tasks()
         self.request_status()
 
     def start_background_tasks(self):
+        """Start the background tasks and reset the continuous error counter."""
+        self.error_consecutive = 0
+
         logging.debug(f"Launching camera status update task for {self.name} camera with interval {self.status_bg_task_interval}.")
         self.status_ioloop_task = PeriodicCallback(
             self.status_ioloop_callback, (self.status_bg_task_interval * 1000)
