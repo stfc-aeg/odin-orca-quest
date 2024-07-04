@@ -24,7 +24,7 @@ class OrcaAdapter(ApiAdapter):
         ]
 
         status_bg_task_enable = bool(self.options.get('status_bg_task_enable', 1))
-        status_bg_task_interval = int(self.options.get('status_bg_task_interval', 1))
+        status_bg_task_interval = float(self.options.get('status_bg_task_interval', 1))
 
         # Create acquisition controller
         self.camera = OrcaController(endpoints, names,
