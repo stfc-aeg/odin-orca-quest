@@ -106,24 +106,23 @@ class OrcaCamera():
             return False
         return True
 
-    def request_config(self):
+    def request_config(self, silence_reply=False):
         """Request configuration values from the camera.
         :return: False, or unnested dict of attributes.
         """
         config_msg = IpcMessage('cmd', 'request_configuration', id=self._next_msg_id())
-        logging.info(f"Sending config request to {self.camera.identity}.")
         self.camera.send(config_msg.encode())
-        reply = self.await_response()
+        reply = self.await_response(silence_reply=silence_reply)
         if reply:
             return reply.attrs['params']['camera']
 
-    def request_status(self):
+    def request_status(self, silence_reply=False):
         """Get the current status of a connected camera and update the class status variable."""
         status_msg = IpcMessage('cmd', 'status', id=self._next_msg_id())
         self.camera.send(status_msg.encode())
 
         try:
-            response = self.await_response(silence_reply=True)
+            response = self.await_response(silence_reply=silence_reply)
             if response:
                 self.status = response.attrs['params']['status']
         except:  # If there is an error, do not update the status
@@ -161,7 +160,8 @@ class OrcaCamera():
             # After 10 consecutive errors, halt the background task
             logging.debug("Multiple consecutive errors in camera response. Halting periodic request task.")
             self.stop_background_tasks()
-        self.request_status()
+        self.request_status(silence_reply=True)
+        self.config = self.request_config(silence_reply=True)
 
     def start_background_tasks(self):
         """Start the background tasks and reset the continuous error counter."""
