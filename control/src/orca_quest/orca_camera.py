@@ -31,13 +31,11 @@ class OrcaCamera():
         self.tree['endpoint'] = self.endpoint
         self.tree['command'] = (lambda: None, self.send_command)
 
-        initial_config = self.request_config()
-        if initial_config:
-            self.config = initial_config
-
+        self.request_config()  # Goes to self.config
+        if self.config:
             self.tree['config'] = {}
 
-            for key, item in initial_config.items():
+            for key, item in self.config.items():
                 self.tree['config'][key] = (lambda key=key:
                     self.config[key], partial(self.set_config, param=key)
                 )  # Function uses key (the parameter) as argument via partial
@@ -112,9 +110,13 @@ class OrcaCamera():
         """
         config_msg = IpcMessage('cmd', 'request_configuration', id=self._next_msg_id())
         self.camera.send(config_msg.encode())
-        reply = self.await_response(silence_reply=silence_reply)
-        if reply:
-            return reply.attrs['params']['camera']
+
+        try:
+            response = self.await_response(silence_reply=silence_reply)
+            if response:
+                self.config = response.attrs['params']['camera']
+        except:
+            logging.debug(f"Could not fetch config for camera {self.camera.identity}, not updating.")
 
     def request_status(self, silence_reply=False):
         """Get the current status of a connected camera and update the class status variable."""
@@ -161,7 +163,7 @@ class OrcaCamera():
             logging.debug("Multiple consecutive errors in camera response. Halting periodic request task.")
             self.stop_background_tasks()
         self.request_status(silence_reply=True)
-        self.config = self.request_config(silence_reply=True)
+        self.request_config(silence_reply=True)
 
     def start_background_tasks(self):
         """Start the background tasks and reset the continuous error counter."""
