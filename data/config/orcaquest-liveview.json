@@ -78,10 +78,20 @@
                     "core_name": "OrcaControlCore",
                     "num_cores": 1
                 },
+                "frame_compressor": {
+                    "core_name": "FrameCompressorCore",
+                    "num_cores": 4,
+                    "connect": "orca_capture",
+                    "blosc_clevel" : 4,
+                    "blosc_doshuffle" : 2,
+                    "blosc_compcode" : 1,
+                    "blosc_blocksize" : 0,
+                    "blosc_num_threads" : 1 
+                },
                 "frame_wrapper": {
                     "core_name": "FrameWrapperCore",
                     "num_cores": 1,
-                    "connect": "orca_capture"
+                    "connect": "frame_compressor"
                 }
             }
         }
@@ -100,15 +110,18 @@
                         2304,
                         4096
                     ],
-                    "compression": "none"
+                    "compression": "blosc",
+                    "blosc_compressor": 1,
+                    "blosc_level": 4,
+                    "blosc_shuffle": 2
                 }
             },
             "file": {
-                "path": "/tmp/"
+                "path": "/data/"
             },
-            "frames": 100,
-            "acquisition_id": "External_trig",
-            "write": true,
+            "frames": 250,
+            "acquisition_id": "default",
+            "write": false,
             "timeout_timer_period": 10000,
             "process": {
                 "number": 1,

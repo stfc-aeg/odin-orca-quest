@@ -91,7 +91,7 @@ void OrcaQuestCameraController::configure(OdinData::IpcMessage& config_msg, Odin
         config_msg.encode_params(config_params, CAMERA_CONFIG_PATH);
         if (!this->update_configuration(config_params))
         {
-            config_reply.set_nack("Camera configuration udpate failed");
+            config_reply.set_nack("Camera configuration update failed");
         }
     }
 
@@ -117,7 +117,7 @@ void OrcaQuestCameraController::configure(OdinData::IpcMessage& config_msg, Odin
 bool OrcaQuestCameraController::update_configuration(OdinData::ParamContainer::Document& params)
 {
 
-    // unsigned int camera_number_;     //!< Camera number as enumerated by driver
+    // unsigned int camera_number_;  //!< Camera number as enumerated by driver
     // double image_timeout_;        //!< Image acquisition timeout in seconds
     // unsigned int num_frames_;     //!< Number of frames to acquire, 0 = no limit
     // unsigned int timestamp_mode_; //!< Camera timestamp mode
@@ -126,38 +126,41 @@ bool OrcaQuestCameraController::update_configuration(OdinData::ParamContainer::D
 
     // Create a copy of the current camera configuration for comparison and then update with
     // the new parameter document
+
     OrcaQuestCameraConfiguration new_config(camera_config_);
     new_config.update(params);
 
 
     if (new_config.camera_number_ != camera_config_.camera_number_)
     {
-        std::cout << "Updated camera number from: " << camera_config_.camera_number_ << " to: " << new_config.camera_number_ << std::endl;
+        LOG4CXX_INFO(logger_, "Updated camera number from: " << camera_config_.camera_number_ << " to: " << new_config.camera_number_);
+
         // Update camera index
         camera_config_.camera_number_ = new_config.camera_number_;
     }
 
     if (new_config.image_timeout_ != camera_config_.image_timeout_)
     {
-        std::cout << "Updated image timeout from: " << camera_config_.image_timeout_ << " to: " << new_config.image_timeout_ << std::endl;
+        LOG4CXX_INFO(logger_,  "Updated image timeout from: " << camera_config_.image_timeout_ << " to: " << new_config.image_timeout_);
         // Update image timeout
         camera_config_.image_timeout_ = new_config.image_timeout_;
     }
 
     if (new_config.num_frames_ != camera_config_.num_frames_)
     {
-        std::cout << "Updated number of frames from: " << camera_config_.num_frames_ << " to: " << new_config.num_frames_ << std::endl;
+        LOG4CXX_INFO(logger_, "Updated number of frames from: " << camera_config_.num_frames_ << " to: " << new_config.num_frames_);
         // Update number of frames to capture
         camera_config_.num_frames_ = new_config.num_frames_;
     }
 
     if (new_config.exposure_time_ != camera_config_.exposure_time_)
     {
-        std::cout << "Updated exposure time from: " << camera_config_.exposure_time_ << " to: " << new_config.exposure_time_ << std::endl;
+        LOG4CXX_INFO(logger_, "Updated exposure time from: " << camera_config_.exposure_time_ << " to: " << new_config.exposure_time_);
         // Update exposure
         if (!camera_.set_property(0x001F0110, new_config.exposure_time_))
         {
             // Check if there was an error setting the camera property
+            LOG4CXX_ERROR(logger_, "ERROR: Failed to updated exposure time from config message")
             return false;
         }
         camera_config_.exposure_time_ = new_config.exposure_time_;
@@ -165,7 +168,8 @@ bool OrcaQuestCameraController::update_configuration(OdinData::ParamContainer::D
 
     if (new_config.frame_rate_ != camera_config_.frame_rate_)
     {
-        std::cout << "Updated frame rate from: " << camera_config_.frame_rate_ << " to: " << new_config.frame_rate_ << std::endl;
+
+        LOG4CXX_INFO(logger_, "Updated frame rate from: " << camera_config_.frame_rate_ << " to: " << new_config.frame_rate_);
         // Update frame rate
         //camera_.set_property(0x001F0110, new_config.frame_rate_);
     }
@@ -173,7 +177,7 @@ bool OrcaQuestCameraController::update_configuration(OdinData::ParamContainer::D
 
     if (new_config.trigger_source_ != camera_config_.trigger_source_)
     {
-        std::cout << "Updated trigger source from: " << camera_config_.trigger_source_ << " to: " << new_config.trigger_source_ << std::endl;
+        LOG4CXX_INFO(logger_, "Updated trigger source from: " << camera_config_.trigger_source_ << " to: " << new_config.trigger_source_);
         // Update frame rate
         if (!camera_.set_property(0x00100110, new_config.trigger_source_))
         {
@@ -186,7 +190,7 @@ bool OrcaQuestCameraController::update_configuration(OdinData::ParamContainer::D
 
     if (new_config.trigger_active_ != camera_config_.trigger_active_)
     {
-        std::cout << "Updated trigger active from: " << camera_config_.trigger_active_ << " to: " << new_config.trigger_active_ << std::endl;
+        LOG4CXX_INFO(logger_, "Updated trigger active from: " << camera_config_.trigger_active_ << " to: " << new_config.trigger_active_);
         // Update frame rate
         if (!camera_.set_property(0x00100120, new_config.trigger_active_))
         {
@@ -199,7 +203,7 @@ bool OrcaQuestCameraController::update_configuration(OdinData::ParamContainer::D
 
     if (new_config.trigger_mode_ != camera_config_.trigger_mode_)
     {
-        std::cout << "Updated trigger mode from: " << camera_config_.trigger_mode_ << " to: " << new_config.trigger_mode_ << std::endl;
+        LOG4CXX_INFO(logger_, "Updated trigger mode from: " << camera_config_.trigger_mode_ << " to: " << new_config.trigger_mode_);
         // Update frame rate
         
         if (!camera_.set_property(0x00100210, new_config.trigger_mode_))
@@ -212,7 +216,7 @@ bool OrcaQuestCameraController::update_configuration(OdinData::ParamContainer::D
 
     if (new_config.trigger_polarity_ != camera_config_.trigger_polarity_)
     {
-        std::cout << "Updated trigger polarity from: " << camera_config_.trigger_polarity_ << " to: " << new_config.trigger_polarity_ << std::endl;
+        LOG4CXX_INFO(logger_, "Updated trigger polarity from: " << camera_config_.trigger_polarity_ << " to: " << new_config.trigger_polarity_);
         // Update trigger polarity
         
         if (!camera_.set_property(0x00100220, new_config.trigger_polarity_))
@@ -224,7 +228,7 @@ bool OrcaQuestCameraController::update_configuration(OdinData::ParamContainer::D
 
     if (new_config.trigger_connector_ != camera_config_.trigger_connector_)
     {
-        std::cout << "Updated trigger connector from: " << camera_config_.trigger_connector_ << " to: " << new_config.trigger_connector_ << std::endl;
+        LOG4CXX_INFO(logger_, "Updated trigger connector from: " << camera_config_.trigger_connector_ << " to: " << new_config.trigger_connector_);
         // Update trigger connector
         
         if (!camera_.set_property(0x00100230, new_config.trigger_connector_))
@@ -233,8 +237,6 @@ bool OrcaQuestCameraController::update_configuration(OdinData::ParamContainer::D
             return false;
         }
     }
-
-
     return true;        
 }
 

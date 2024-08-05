@@ -135,21 +135,12 @@ namespace FrameProcessor
         LOG4CXX_INFO(logger_, "Core " << lcore_id_ << " Connecting to camera\n");
 
         bool passed = false;
-
-
-        camera_property_update_ = false;
         in_capture_ = false;
 
         while (likely(run_lcore_))
         {
-            if(camera_property_update_)
-            {  
-                in_capture_ = false;
-                continue;
-            }
-
-
             // Check camera is recording
+            
             
             if(orca_controller_->get_recording() && 
                 // Check if running forever
@@ -157,20 +148,22 @@ namespace FrameProcessor
                 // Check frame is in acquisition
                 orca_controller_->camera_status_.frame_number_ < orca_controller_->camera_config_.num_frames_))
             {
-                // Recording is set to true, capture images
-                in_capture_ = true;
+                //LOG4CXX_INFO(logger_, "Core " << lcore_id_ << " Loop");
+                // This frame should be captured
 
                 frame_src = orca_controller_->get_frame();
 
+                // Check if a valid frame pointer was returned
                 if(frame_src != nullptr)
                 {
+                    // Get a hugepages memory location for this frame
                     if (unlikely(rte_ring_dequeue(
                         clear_frames_ring_, (void **) &current_super_frame_buffer_
                     )) != 0)
                     {
                         // Memory location cannot be found start dropping this frame
                         dropped_frames_++;
-                        LOG4CXX_WARN(logger_,
+                        LOG4CXX_DEBUG(logger_,
                                 "dropping frame: " << orca_controller_->camera_status_.frame_number_);
                     }
                     else
@@ -189,6 +182,8 @@ namespace FrameProcessor
                         // Copy the frame data to the frame struct
                         rte_memcpy(decoder_->get_image_data_start(current_super_frame_buffer_), frame_src, frame_size);
 
+
+                        // Enqeue the frame to one of the downstream cores
                         rte_ring_enqueue(
                                     downstream_rings_[
                                         decoder_->get_super_frame_number(current_super_frame_buffer_) % 
@@ -197,10 +192,15 @@ namespace FrameProcessor
                                 );
                     }
 
+
+                    // Debug print per 1000 frames
+                    // This can be removed
                     if(orca_controller_->camera_status_.frame_number_ % 1000 == 0)
                     {
                         LOG4CXX_INFO(logger_, "Core " << lcore_id_ << " Captured framed " << orca_controller_->camera_status_.frame_number_);
                     }
+
+                    // Increment the frame current frame number
                     orca_controller_->camera_status_.frame_number_++;
                 }
             }
@@ -235,7 +235,7 @@ namespace FrameProcessor
     {
 
 
-        LOG4CXX_INFO(logger_, "Core " << lcore_id_ << " connecting...");
+        LOG4CXX_INFO(logger_, "Core " << proc_idx_ << " connecting...");
  
         return true;
     }
@@ -246,15 +246,6 @@ namespace FrameProcessor
         // Update the config based from the passed IPCmessage
 
         LOG4CXX_INFO(logger_, config_.core_name << " : " << proc_idx_ << " Got update config: \n" << config);
-        
-
-        // while(in_capture_)
-        //     continue;
-
-        // camera_.set_property(DCAM_IDPROP_EXPOSURETIME, 0.02);
-
-
-        // camera_property_update_ = false;
     }
 
     DPDKREGISTER(DpdkWorkerCore, OrcaCaptureCore, "OrcaCaptureCore");

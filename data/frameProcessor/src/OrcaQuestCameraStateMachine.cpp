@@ -8,7 +8,7 @@ namespace FrameProcessor {
 OrcaQuestCameraState::OrcaQuestCameraState(OrcaQuestCameraController* controller) :
     controller_(controller)
 {
-    // Define custom type information for naming state transition events
+    // State transition events
     EventConnect::custom_static_type_ptr("connect");
     EventDisconnect::custom_static_type_ptr("disconnect");
     EventStartCapture::custom_static_type_ptr("start_capture");
@@ -33,7 +33,6 @@ void OrcaQuestCameraState::execute_command(std::string& command)
         ss << "Unknown camera state transition command: " << command;
         throw(std::runtime_error(ss.str()));
     }
-
     this->execute_command(command_type);
 }
 

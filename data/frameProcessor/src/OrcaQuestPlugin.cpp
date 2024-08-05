@@ -41,9 +41,9 @@ namespace FrameProcessor
    */
   void OrcaQuestPlugin::configure(OdinData::IpcMessage& config, OdinData::IpcMessage& reply)
   {
-    LOG4CXX_DEBUG(logger_, "Configuring Orca Quest plugin");
+    LOG4CXX_INFO(logger_, "Configuring Orca Quest plugin");
 
-    LOG4CXX_DEBUG(logger_, "Plugin name: " << this->get_name());
+    LOG4CXX_INFO(logger_, "Plugin name: " << this->get_name());
     FrameCallback frame_callback = boost::bind(&OrcaQuestPlugin::process_frame, this, _1);
 
     DpdkFrameProcessorPlugin::configure(config, reply, &decoder_, frame_callback);
@@ -53,7 +53,7 @@ namespace FrameProcessor
   void OrcaQuestPlugin::requestConfiguration(OdinData::IpcMessage& reply)
   {
     // Return the configuration of the plugin
-    LOG4CXX_DEBUG(logger_, "Configuration requested for Orca Quest plugin");
+    LOG4CXX_INFO(logger_, "Configuration requested for Orca Quest plugin");
 
     DpdkFrameProcessorPlugin::requestConfiguration(reply);
   }
@@ -66,7 +66,7 @@ namespace FrameProcessor
   void OrcaQuestPlugin::status(OdinData::IpcMessage& status)
   {
     // Record the plugin's status items
-    LOG4CXX_DEBUG(logger_, "Status requested for Orca Quest plugin");
+    LOG4CXX_INFO(logger_, "Status requested for Orca Quest plugin");
 
     status.set_param(get_name() + "/" + "wibble", true);
 
@@ -78,7 +78,7 @@ namespace FrameProcessor
    */
   bool OrcaQuestPlugin::reset_statistics(void)
   {
-    LOG4CXX_DEBUG(logger_, "Statistics reset requested for Orca Quest plugin")
+    LOG4CXX_INFO(logger_, "Statistics reset requested for Orca Quest plugin")
 
     bool reset_ok = true;
 

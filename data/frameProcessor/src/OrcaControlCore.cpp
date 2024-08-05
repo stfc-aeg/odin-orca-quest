@@ -49,13 +49,11 @@ namespace FrameProcessor
 
 
         // Bind the IPC channel
-        // TODO: Move this to a config param
-
+        // TODO: Move the address to a config param
         Orca_Ctrl_Channel_.bind("tcp://192.168.0.31:9001");
 
 
         LOG4CXX_INFO(logger_, "Core " << lcore_id_ << " Bound IPC channel to port 9001");
-
 
         bool new_msg = false;
 
@@ -67,7 +65,8 @@ namespace FrameProcessor
         while (likely(run_lcore_))
         {
             // Do fast loop
-            new_msg = Orca_Ctrl_Channel_.poll(100);
+            // TODO: Make this poll time a config param
+            new_msg = Orca_Ctrl_Channel_.poll(10);
 
             if(new_msg)
             {
@@ -82,6 +81,8 @@ namespace FrameProcessor
 
                 bool request_ok = true;
                 std::ostringstream error_ss;
+
+                std::stringstream ss;
 
                 try
                 {
@@ -107,25 +108,34 @@ namespace FrameProcessor
                         {
                         // Handle a configuration command
                         case OdinData::IpcMessage::MsgValCmdConfigure:
-                            std::cout <<
-                            "Got camera control configure request from client " << client_identity
+                            
+                            ss << ": Got camera control configure request from client " << client_identity
                                 << " : " << ctrl_req_encoded << std::endl;
+                            LOG4CXX_INFO(logger_, "Core " << lcore_id_ << ss.str());
+
+
                             OrcaQuestCameraController_->configure(ctrl_req, ctrl_reply);
                             break;
 
                         // Handle a configuration request command
                         case OdinData::IpcMessage::MsgValCmdRequestConfiguration:
-                            std::cout <<
-                            "Got camera control read configuration request from client " << client_identity
+                            
+                            ss << " Got camera control read configuration request from client " << client_identity
                             << " : " << ctrl_req_encoded << std::endl;
+
+                            LOG4CXX_INFO(logger_, "Core " << lcore_id_ << ss.str());
+
                             OrcaQuestCameraController_->request_configuration(std::string(""), ctrl_reply);
                             break;
 
                         // Handle a status request command
                         case OdinData::IpcMessage::MsgValCmdStatus:
-                            // std::cout <<
-                            // "Got camera control status request from client " << client_identity
-                            //     << " : " << ctrl_req_encoded << std::endl;
+
+                            ss << " Got camera control status request from client " << client_identity
+                                << " : " << ctrl_req_encoded << std::endl;
+
+                            LOG4CXX_INFO(logger_, "Core " << lcore_id_ << ss.str());
+
                             OrcaQuestCameraController_->get_status(std::string(""), ctrl_reply);
                             break;
 
@@ -194,7 +204,7 @@ namespace FrameProcessor
 
     bool OrcaControlCore::connect(void)
     {
-        LOG4CXX_INFO(logger_, "Core " << lcore_id_ << " connecting...");
+        LOG4CXX_INFO(logger_, "Core " << proc_idx_ << " connecting...");
 
         // This should should up any required resources before the main fast loop starts
         // For example you could loop up the upstream rings that may be required
@@ -209,7 +219,7 @@ namespace FrameProcessor
     {
         // Update the config based from the passed OdinData::IpcMessage
 
-        LOG4CXX_INFO(logger_, config_.core_name << " : " << proc_idx_ << " Got update config.");
+        LOG4CXX_INFO(logger_, config_.core_name << " : " << lcore_id_ << " Got update config.");
     }
 
     DPDKREGISTER(DpdkWorkerCore, OrcaControlCore, "OrcaControlCore");

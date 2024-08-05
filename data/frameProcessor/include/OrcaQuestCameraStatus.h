@@ -26,7 +26,6 @@ namespace FrameProcessor
                 ParamContainer(),
                 frame_number_(Defaults::frame_number),
                 camera_status_(Defaults::camera_status)
-
             {
                 // Bind the parameters in the container
                 bind_params();

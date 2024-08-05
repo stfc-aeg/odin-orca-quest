@@ -38,7 +38,6 @@ namespace FrameProcessor
                 }        
             }
 
-
         private:
 
             virtual void bind_params(void)
@@ -51,15 +50,12 @@ namespace FrameProcessor
 
             }
 
-            
             std::string core_name;
             std::string connect;
             unsigned int num_cores;
             unsigned int num_downstream_cores;
             // Specfic config
             unsigned int frame_timeout_;
-
-
 
             friend class OrcaCaptureCore;
     };

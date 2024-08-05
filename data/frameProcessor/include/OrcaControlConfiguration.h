@@ -24,7 +24,7 @@ namespace FrameProcessor
             void resolve(DpdkCoreConfiguration& core_config_)
             {
                 const ParamContainer::Value* value_ptr =
-                    core_config_.get_worker_core_config("orca_capture");
+                    core_config_.get_worker_core_config("orca_control");
 
                 if (value_ptr != nullptr)
                 {

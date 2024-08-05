@@ -160,7 +160,7 @@ char* OrcaQuestCamera::capture_frame() {
 
     err_ = dcamwait_start(orcaWait_, &frameReady_Waiter_);
     if (failed(err_)) {
-        LOG4CXX_WARN(logger_,"Error capturing frame");
+        //LOG4CXX_DEBUG(logger_,"Error capturing frame");
         return NULL;
     }
 

@@ -8,8 +8,8 @@ namespace FrameProcessor
     namespace Defaults
     {
         const unsigned int default_camera_number = 0; 
-        const double default_image_timeout = 100; 
-        const unsigned int default_number_frames = 0; 
+        const double default_image_timeout = 10; 
+        const unsigned int default_number_frames = 50; 
         const unsigned int default_timestamp_mode = 2;
 
         const int default_trigger_source = 1;
@@ -111,7 +111,7 @@ namespace FrameProcessor
             // None:    The combination can be defined but no cameras support it.
 
 
-            // Setting for triggering source for frame capture
+            // Setting for triggering source for frame capture\my
             // 1 = internal
             // 2 = External
             // 3 = Software
