@@ -21,7 +21,7 @@ class OrcaAdapter(ApiAdapter):
             item.strip() for item in self.options.get('camera_endpoint', None).split(",")
         ]
         names = [
-            item.strip() for item in self.options.get('camera_name', 'camera_1').split(",")
+            item.strip() for item in self.options.get('camera_name', None).split(",")
         ]
 
         status_bg_task_enable = bool(self.options.get('status_bg_task_enable', 1))
