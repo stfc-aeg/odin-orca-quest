@@ -31,7 +31,7 @@ class OrcaCamera():
         self.tree['endpoint'] = self.endpoint
         self.tree['command'] = (lambda: None, self.send_command)
 
-        self.request_config()  # Goes to self.config
+        self.get_status_config(msg='request_configuration')  # Goes to self.config
         if self.config:
             self.tree['config'] = {}
 
@@ -40,7 +40,7 @@ class OrcaCamera():
                     self.config[key], partial(self.set_config, param=key)
                 )  # Function uses key (the parameter) as argument via partial
 
-        self.request_status()
+        self.get_status_config(msg='status')
         self.tree['status'] = {}
         for key in self.status.keys():
             self.tree['status'][key] = (lambda key=key: self.status[key], None)
@@ -68,7 +68,7 @@ class OrcaCamera():
             self.timeout_ms = 5000
 
         self.send_config_message(self.command_msg)
-        self.request_status()
+        self.get_status_config(msg='status', silence_reply=True)
 
         if value == "connect":
             self.timeout_ms = 1000  # Reset
@@ -104,29 +104,20 @@ class OrcaCamera():
             return False
         return True
 
-    def request_config(self, silence_reply=False):
-        """Request configuration values from the camera.
-        :return: False, or unnested dict of attributes.
-        """
-        config_msg = IpcMessage('cmd', 'request_configuration', id=self._next_msg_id())
-        self.camera.send(config_msg.encode())
+    def get_status_config(self, msg, silence_reply=False):
+        """Identify if the response is for setting the status or config."""
+        cmd_msg = IpcMessage('cmd', msg, id=self._next_msg_id())
+        self.camera.send(cmd_msg.encode())
 
         try:
             response = self.await_response(silence_reply=silence_reply)
             if response:
-                self.config = response.attrs['params']['camera']
-        except:
-            logging.debug(f"Could not fetch config for camera {self.camera.identity}, not updating.")
-
-    def request_status(self, silence_reply=False):
-        """Get the current status of a connected camera and update the class status variable."""
-        status_msg = IpcMessage('cmd', 'status', id=self._next_msg_id())
-        self.camera.send(status_msg.encode())
-
-        try:
-            response = self.await_response(silence_reply=silence_reply)
-            if response:
-                self.status = response.attrs['params']['status']
+                if ('camera' in response.attrs['params'].keys()):
+                    self.config = response.attrs['params']['camera']
+                elif ('status' in response.attrs['params'].keys()):
+                    self.status = response.attrs['params']['status']
+                else:
+                    logging.debug(f"Got unexpected response structure from {self.camera.identity}.")
         except:  # If there is an error, do not update the status
             logging.debug(f"Could not fetch status for camera {self.camera.identity}, not updating.")
 
@@ -162,8 +153,8 @@ class OrcaCamera():
             # After 10 consecutive errors, halt the background task
             logging.debug("Multiple consecutive errors in camera response. Halting periodic request task.")
             self.stop_background_tasks()
-        self.request_status(silence_reply=True)
-        self.request_config(silence_reply=True)
+        self.get_status_config(msg='status', silence_reply=True)
+        self.get_status_config(msg='request_configuration', silence_reply=True)
 
     def start_background_tasks(self):
         """Start the background tasks and reset the continuous error counter."""
