@@ -15,7 +15,7 @@ class OrcaController():
 
         # Internal variables
         self.cameras = []
-        camtrees = []
+        camtrees = {}
         tree = {}
 
         self.status_bg_task_enable = status_bg_task_enable
@@ -27,7 +27,7 @@ class OrcaController():
 
             # Store in list of cameras and put tree in list of trees
             self.cameras.append(camera)
-            camtrees.append(camera.tree)
+            camtrees[names[i]] = camera.tree
 
         # Array of camera trees becomes real parameter tree
         tree['cameras'] = camtrees
