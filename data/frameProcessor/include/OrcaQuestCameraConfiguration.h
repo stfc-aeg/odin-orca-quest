@@ -9,7 +9,7 @@ namespace FrameProcessor
     {
         const unsigned int default_camera_number = 0; 
         const double default_image_timeout = 10; 
-        const unsigned int default_number_frames = 50; 
+        const unsigned int default_number_frames = 0; 
         const unsigned int default_timestamp_mode = 2;
 
         const int default_trigger_source = 1;
@@ -17,6 +17,8 @@ namespace FrameProcessor
         const int default_trigger_active = 1;
         const int default_trigger_polarity = 1;
         const int default_trigger_connector = 2;
+
+        const bool default_simulated_camera = true;
     }
 
     class OrcaQuestCameraConfiguration : public OdinData::ParamContainer
@@ -42,7 +44,8 @@ namespace FrameProcessor
                 trigger_active_(Defaults::default_trigger_mode),
                 trigger_mode_(Defaults::default_trigger_active),
                 trigger_polarity_(Defaults::default_trigger_polarity),
-                trigger_connector_(Defaults::default_trigger_connector)
+                trigger_connector_(Defaults::default_trigger_connector),
+                camera_simulated_mode_(Defaults::default_simulated_camera)
             {
                 // Bind the parameters in the container
                 bind_params();
@@ -88,6 +91,7 @@ namespace FrameProcessor
                 bind_param<int>(trigger_mode_, "trigger_mode");
                 bind_param<int>(trigger_polarity_, "trigger_polarity");
                 bind_param<int>(trigger_connector_, "trigger_connector");
+                bind_param<bool>(camera_simulated_mode_, "simulated_camera");
             }
 
             unsigned int camera_number_;     //!< Camera number as enumerated by driver
@@ -97,6 +101,7 @@ namespace FrameProcessor
             unsigned int timestamp_mode_; //!< Camera timestamp mode
             double exposure_time_;        //!< Exposure time in seconds
             double frame_rate_;           //!< Frame rate in Hertz
+            bool camera_simulated_mode_;     //!< Enabled simulated camera for testing
 
 
             // TRIGGER SOURCE	            Internal	|        Software	            External

@@ -168,6 +168,7 @@ namespace FrameProcessor
                     }
                     else
                     {
+                        //std::cout << "Got new frame: " << orca_controller_->camera_status_.frame_number_ << std::endl;
                         // Zero out the frame header to clear old data
                         memset(current_super_frame_buffer_, 0, decoder_->get_frame_buffer_size());
 

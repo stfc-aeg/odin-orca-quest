@@ -50,7 +50,7 @@ namespace FrameProcessor
 
         // Bind the IPC channel
         // TODO: Move the address to a config param
-        Orca_Ctrl_Channel_.bind("tcp://192.168.0.31:9001");
+        Orca_Ctrl_Channel_.bind("tcp://0.0.0.0:9001");
 
 
         LOG4CXX_INFO(logger_, "Core " << lcore_id_ << " Bound IPC channel to port 9001");

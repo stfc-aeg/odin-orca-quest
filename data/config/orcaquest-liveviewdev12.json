@@ -117,7 +117,7 @@
         },
         "Liveview":       
         {
-            "frame_frequency": 100,
+            "frame_frequency": 15,
             "per_second": 0,
             "live_view_socket_addr": "tcp://0.0.0.0:5020",
             "dataset_name": "",

@@ -11,9 +11,22 @@ OrcaQuestCameraController::OrcaQuestCameraController(ProtocolDecoder* decoder) :
 {
     // Constructor implementation goes here.
     // Initialize decoder, loggers, or any other necessary components.
+
+
+    if (camera_config_.camera_simulated_mode_) {
+        LOG4CXX_INFO(logger_, "Creating Mocked Camera")
+        camera_ = CameraFactory::createCamera("mock");
+    } else {
+        LOG4CXX_INFO(logger_, "Using Real Camera")
+        camera_ = CameraFactory::createCamera("real");
+    }
+
     camera_state_.initiate();
-    std::string connect = "connect";
-    execute_command(connect);
+    // std::string connect = "connect";
+
+    // execute_command(connect);
+    // std::string capture = "capture";
+    // execute_command(capture);
 }
 
 // Destructor
@@ -49,18 +62,18 @@ bool OrcaQuestCameraController::execute_command(std::string& command)
 //! Connect to the camera
 bool OrcaQuestCameraController::connect()
 {
-    camera_.api_init();
-    bool connected = camera_.connect(camera_config_.camera_number_);
-    camera_.attach_buffer(10);
-    camera_.prepare_capture(camera_config_.image_timeout_);
+    camera_->api_init();
+    bool connected = camera_->connect(camera_config_.camera_number_);
+    camera_->attach_buffer(10);
+    camera_->prepare_capture(camera_config_.image_timeout_);
     // Return the connection status
     return connected;
 }
 
 bool OrcaQuestCameraController::disconnect()
 {
-    camera_.disarm();
-    camera_.disconnect();
+    camera_->disarm();
+    camera_->disconnect();
     // Return the disconnection status
     return true;
 }
@@ -157,7 +170,7 @@ bool OrcaQuestCameraController::update_configuration(OdinData::ParamContainer::D
     {
         LOG4CXX_INFO(logger_, "Updated exposure time from: " << camera_config_.exposure_time_ << " to: " << new_config.exposure_time_);
         // Update exposure
-        if (!camera_.set_property(0x001F0110, new_config.exposure_time_))
+        if (!camera_->set_property(0x001F0110, new_config.exposure_time_))
         {
             // Check if there was an error setting the camera property
             LOG4CXX_ERROR(logger_, "ERROR: Failed to updated exposure time from config message")
@@ -171,7 +184,7 @@ bool OrcaQuestCameraController::update_configuration(OdinData::ParamContainer::D
 
         LOG4CXX_INFO(logger_, "Updated frame rate from: " << camera_config_.frame_rate_ << " to: " << new_config.frame_rate_);
         // Update frame rate
-        //camera_.set_property(0x001F0110, new_config.frame_rate_);
+        camera_->set_property(0x00000000, new_config.frame_rate_);
     }
 
 
@@ -179,7 +192,7 @@ bool OrcaQuestCameraController::update_configuration(OdinData::ParamContainer::D
     {
         LOG4CXX_INFO(logger_, "Updated trigger source from: " << camera_config_.trigger_source_ << " to: " << new_config.trigger_source_);
         // Update frame rate
-        if (!camera_.set_property(0x00100110, new_config.trigger_source_))
+        if (!camera_->set_property(0x00100110, new_config.trigger_source_))
         {
             // Check if there was an error setting the camera property
             return false;
@@ -192,7 +205,7 @@ bool OrcaQuestCameraController::update_configuration(OdinData::ParamContainer::D
     {
         LOG4CXX_INFO(logger_, "Updated trigger active from: " << camera_config_.trigger_active_ << " to: " << new_config.trigger_active_);
         // Update frame rate
-        if (!camera_.set_property(0x00100120, new_config.trigger_active_))
+        if (!camera_->set_property(0x00100120, new_config.trigger_active_))
         {
             // Check if there was an error setting the camera property
             return false;
@@ -206,7 +219,7 @@ bool OrcaQuestCameraController::update_configuration(OdinData::ParamContainer::D
         LOG4CXX_INFO(logger_, "Updated trigger mode from: " << camera_config_.trigger_mode_ << " to: " << new_config.trigger_mode_);
         // Update frame rate
         
-        if (!camera_.set_property(0x00100210, new_config.trigger_mode_))
+        if (!camera_->set_property(0x00100210, new_config.trigger_mode_))
         {
             // Check if there was an error setting the camera property
             return false;
@@ -219,7 +232,7 @@ bool OrcaQuestCameraController::update_configuration(OdinData::ParamContainer::D
         LOG4CXX_INFO(logger_, "Updated trigger polarity from: " << camera_config_.trigger_polarity_ << " to: " << new_config.trigger_polarity_);
         // Update trigger polarity
         
-        if (!camera_.set_property(0x00100220, new_config.trigger_polarity_))
+        if (!camera_->set_property(0x00100220, new_config.trigger_polarity_))
         {
             // Check if there was an error setting the camera property
             return false;
@@ -231,7 +244,7 @@ bool OrcaQuestCameraController::update_configuration(OdinData::ParamContainer::D
         LOG4CXX_INFO(logger_, "Updated trigger connector from: " << camera_config_.trigger_connector_ << " to: " << new_config.trigger_connector_);
         // Update trigger connector
         
-        if (!camera_.set_property(0x00100230, new_config.trigger_connector_))
+        if (!camera_->set_property(0x00100230, new_config.trigger_connector_))
         {
             // Check if there was an error setting the camera property
             return false;
@@ -281,7 +294,7 @@ bool OrcaQuestCameraController::get_recording()
 
 char* OrcaQuestCameraController::get_frame()
 {
-    return camera_.capture_frame();
+    return camera_->capture_frame();
 }
 
 } // namespace FrameProcessor

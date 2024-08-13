@@ -118,6 +118,8 @@ bool OrcaQuestCamera::attach_buffer(int32 numFrames) {
     return true;
 }
 
+bool OrcaQuestCamera::attach_provided_buffer(char* buffer) { return false; }
+
 bool OrcaQuestCamera::remove_buffer() {
     if (orca_ == nullptr) return false;
 

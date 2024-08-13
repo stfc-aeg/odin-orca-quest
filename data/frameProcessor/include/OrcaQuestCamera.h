@@ -1,7 +1,8 @@
-
+// OrcaQuestCamera.h
 #ifndef ORCA_QUEST_CAMERA_H
 #define ORCA_QUEST_CAMERA_H
 
+#include "ICameraInterface.h"
 #include <iostream>
 #include <string>
 #include <cstring>
@@ -15,25 +16,25 @@ using namespace log4cxx::helpers;
 #include "dcamapi4.h"
 #include "dcamprop.h"
 
-class OrcaQuestCamera {
+class OrcaQuestCamera : public ICameraInterface {
 public:
     OrcaQuestCamera();
-    ~OrcaQuestCamera();
+    ~OrcaQuestCamera() override;
 
-    bool api_init();
-    bool connect(int index = 0);
-    bool disconnect();
-    bool disarm();
-    int get_device_count();
-    bool attach_buffer(int32 numFrames);
-    bool attach_provided_buffer(char* buffer);
-    bool remove_buffer();
-    bool prepare_capture(int32 frameTimeout=1000);
-    char* capture_frame();
-    bool abort_capture();
-    bool set_property(int32 propertyID, double value);
-    double get_property(int32 propertyID);
-    void close();
+    bool api_init() override;
+    bool connect(int index = 0) override;
+    bool disconnect() override;
+    bool disarm() override;
+    int get_device_count() override;
+    bool attach_buffer(int32_t numFrames) override;
+    bool attach_provided_buffer(char* buffer) override;
+    bool remove_buffer() override;
+    bool prepare_capture(int32_t frameTimeout = 1000) override;
+    char* capture_frame() override;
+    bool abort_capture() override;
+    bool set_property(int32_t propertyID, double value) override;
+    double get_property(int32_t propertyID) override;
+    void close() override;
 
     _DCAMIDPROP camera_properties;
     _DCAMPROPMODEVALUE property_values;
@@ -45,7 +46,7 @@ private:
     HDCAM orca_;
     DCAMWAIT_OPEN wait_open_handle_;
     HDCAMWAIT orcaWait_;
-    int32 frame_size_;
+    int32_t frame_size_;
     DCAMBUF_FRAME frameBuffer_;
     DCAMWAIT_START frameReady_Waiter_;
     DCAMCAP_TRANSFERINFO captransferinfo_;
@@ -55,11 +56,6 @@ private:
     bool buffer_type_;
 
     bool check_dcam_err(DCAMERR err, const std::string& action);
-
 };
 
 #endif // ORCA_QUEST_CAMERA_H
-
-
-
-

@@ -19,6 +19,8 @@ add_library(OrcaQuestPlugin SHARED
         OrcaControlCore.cpp
         OrcaQuestCameraController.cpp
         OrcaQuestCameraStateMachine.cpp
+        SimulatedCamera.cpp
+        SimulatedImageGenerator.cpp
 )
 
 find_library(DCAMAPI_LIBRARY NAMES dcamapi)

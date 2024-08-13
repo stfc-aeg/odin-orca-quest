@@ -63,9 +63,9 @@
             "num_secondary_processes": 0,
             "shared_buffer_size": 17179869184,
             "dpdk_eal": {
-                "corelist": "0,2,4,6,8,10,12,14,16,18,20,22,24,26,28,30",
+                "corelist": "16-31,48-63",
                 "loglevel": "debug",
-                "allowdevice": "0000:22:00.0",
+                "allowdevice": "0000:02:00.0",
                 "proc-type": "Primary",
                 "file-prefix": "odin-data"
             },

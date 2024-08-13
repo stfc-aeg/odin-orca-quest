@@ -12,6 +12,8 @@ using namespace log4cxx::helpers;
 #include <ParamContainer.h>
 
 #include "OrcaQuestCamera.h"
+#include "ICameraInterface.h"
+#include "CameraFactory.h"
 #include "OrcaCaptureConfiguration.h"
 #include "OrcaQuestCameraStatus.h"
 
@@ -83,7 +85,7 @@ namespace FrameProcessor
 
         ProtocolDecoder* decoder_;
 
-        OrcaQuestCamera camera_;
+        std::unique_ptr<ICameraInterface> camera_;
         OrcaQuestCameraState camera_state_;
 
         LoggerPtr logger_;
