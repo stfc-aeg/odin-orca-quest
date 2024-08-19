@@ -1,5 +1,5 @@
-from odin_data.ipc_channel import IpcChannel
-from odin_data.ipc_message import IpcMessage
+from odin_data.control.ipc_channel import IpcChannel
+from odin_data.control.ipc_message import IpcMessage
 
 from tornado.ioloop import PeriodicCallback
 
