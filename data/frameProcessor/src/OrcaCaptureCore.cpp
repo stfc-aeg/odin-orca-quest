@@ -29,8 +29,13 @@ namespace FrameProcessor
 
         LOG4CXX_INFO(logger_, "Core " << proc_idx_ << " creation!");
 
-        orca_controller_ = new OrcaQuestCameraController(decoder_);
+        const rapidjson::Value* orca_capture_config = dpdkWorkCoreReferences.core_config.get_worker_core_config("orca_capture");
 
+
+        const rapidjson::Value& camera_config = (*orca_capture_config)["camera_config"];
+
+        orca_controller_ = new OrcaQuestCameraController(decoder_, camera_config);
+        
 
         decoder_->set_capture_core_ref(reinterpret_cast<void*>(orca_controller_));
 
@@ -146,7 +151,7 @@ namespace FrameProcessor
                 // Check if running forever
                 (orca_controller_->camera_config_.num_frames_ == 0 || 
                 // Check frame is in acquisition
-                orca_controller_->camera_status_.frame_number_ < orca_controller_->camera_config_.num_frames_))
+                orca_controller_->camera_status_.frame_number_ <= orca_controller_->camera_config_.num_frames_))
             {
                 //LOG4CXX_INFO(logger_, "Core " << lcore_id_ << " Loop");
                 // This frame should be captured

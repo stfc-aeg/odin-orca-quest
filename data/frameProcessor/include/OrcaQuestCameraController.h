@@ -14,7 +14,7 @@ using namespace log4cxx::helpers;
 #include "OrcaQuestCamera.h"
 #include "ICameraInterface.h"
 #include "CameraFactory.h"
-#include "OrcaCaptureConfiguration.h"
+#include "OrcaCaptureCoreConfiguration.h"
 #include "OrcaQuestCameraStatus.h"
 
 #include "DpdkSharedBuffer.h"
@@ -33,7 +33,7 @@ namespace FrameProcessor
     {
     public:
         //! Constructor for the controller taking a pointer to the decoder as an argument
-        OrcaQuestCameraController(ProtocolDecoder* decoder);
+        OrcaQuestCameraController(ProtocolDecoder* decoder, const rapidjson::Value& camera_config);
 
         //! Destructor for the controller class
         ~OrcaQuestCameraController();
@@ -69,6 +69,8 @@ namespace FrameProcessor
         char* get_frame(void);
 
         bool update_configuration(OdinData::ParamContainer::Document& params);
+
+        bool apply_configuration();
 
         bool request_configuration(const std::string param_prefix, OdinData::IpcMessage& config_reply);
 

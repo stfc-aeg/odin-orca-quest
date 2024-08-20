@@ -12,7 +12,7 @@ using namespace log4cxx::helpers;
 #include "DpdkWorkerCore.h"
 #include "DpdkSharedBuffer.h"
 #include "DpdkCoreConfiguration.h"
-#include "OrcaCaptureConfiguration.h"
+#include "OrcaCaptureCoreConfiguration.h"
 #include "ProtocolDecoder.h"
 #include "OrcaQuestCameraController.h"
 #include "OrcaQuestCamera.h"
@@ -41,7 +41,7 @@ namespace FrameProcessor
         ProtocolDecoder* decoder_;
         DpdkSharedBuffer* shared_buf_;
 
-        OrcaCaptureConfiguration config_;
+        OrcaCaptureCoreConfiguration config_;
         LoggerPtr logger_;
         
         OrcaQuestCameraController* orca_controller_;

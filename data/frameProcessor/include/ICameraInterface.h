@@ -3,6 +3,7 @@
 #define I_CAMERA_INTERFACE_H
 
 #include <cstdint>
+#include <string>
 
 class ICameraInterface {
 public:
@@ -19,7 +20,7 @@ public:
     virtual bool prepare_capture(int32_t frameTimeout = 1000) = 0;
     virtual char* capture_frame() = 0;
     virtual bool abort_capture() = 0;
-    virtual bool set_property(int32_t propertyID, double value) = 0;
+    virtual bool set_property(const std::string& propertyID, double value) = 0;
     virtual double get_property(int32_t propertyID) = 0;
     virtual void close() = 0;
 };

@@ -32,10 +32,6 @@ namespace FrameProcessor
                 }        
             }
 
-
-            
-
-
         private:
 
             virtual void bind_params(void)

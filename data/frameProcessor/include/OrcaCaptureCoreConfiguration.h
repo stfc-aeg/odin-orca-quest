@@ -1,5 +1,5 @@
-#ifndef INCLUDE_ORCACAPTURECONFIG_H_
-#define INCLUDE_ORCACAPTURECONFIG_H_
+#ifndef INCLUDE_ORCACAPTURECORECONFIG_H_
+#define INCLUDE_ORCACAPTURECORECONFIG_H_
 
 
 #include "ParamContainer.h"
@@ -15,12 +15,12 @@ namespace FrameProcessor
     }
 
 
-    class OrcaCaptureConfiguration : public OdinData::ParamContainer
+    class OrcaCaptureCoreConfiguration : public OdinData::ParamContainer
     {
 
         public:
 
-            OrcaCaptureConfiguration() :
+            OrcaCaptureCoreConfiguration() :
                 ParamContainer(),
                 frame_timeout_(Defaults::default_frame_timeout)
             {
@@ -61,4 +61,4 @@ namespace FrameProcessor
     };
 }
 
-#endif // INCLUDE_ORCACAPTURECONFIG_H_
+#endif // INCLUDE_ORCACAPTURECORECONFIG_H_

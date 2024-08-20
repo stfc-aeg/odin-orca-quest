@@ -58,7 +58,19 @@ bool OrcaQuestCamera::connect(int index) {
 
     err_ = dcamdev_open(&device_handle_);
     if (failed(err_)) {
-        LOG4CXX_WARN(logger_, "Failed to open connection to camera. Stopping.");
+        
+        char errtext[ 256 ];
+
+        // err, hdcam, errid, errtext, sizeof(errtext)
+        DCAMDEV_STRING	param;
+        memset( &param, 0, sizeof(param) );
+        param.size		= sizeof(param);
+        param.text		= errtext;
+        param.textbytes	= sizeof(errtext);
+        param.iString	= err_;
+        
+        err_ = dcamdev_getstring( orca_, &param );
+        LOG4CXX_WARN(logger_, "Failed to open connection to camera. Stopping: " << err_);
         dcamapi_uninit();
         return false;
     }
@@ -128,10 +140,6 @@ bool OrcaQuestCamera::remove_buffer() {
         err_ = dcambuf_release(orca_);
         return !failed(err_);
     }
-    else
-    {
-        
-    }
 
     return false;
 }
@@ -181,10 +189,67 @@ bool OrcaQuestCamera::abort_capture() {
     return check_dcam_err(err_, "Abort capture");
 }
 
-bool OrcaQuestCamera::set_property(int32 propertyID, double value) {
+bool OrcaQuestCamera::set_dcam_property(int32 propertyID, double value) {
     if (orca_ == nullptr) return false;
+    LOG4CXX_INFO(logger_, "propertyID: " << propertyID << " value: " << value);
     err_ = dcamprop_setvalue(orca_, propertyID, value);
     return check_dcam_err(err_, "Set property");
+}
+
+bool OrcaQuestCamera::set_property(const std::string& propertyID, double value) {
+    if (orca_ == nullptr) {
+        LOG4CXX_ERROR(logger_, "Cannot set property: orca_ is nullptr");
+        return false;
+    }
+
+    LOG4CXX_INFO(logger_, "Attempting to set property: " << propertyID << " to value: " << value);
+
+    struct PropertySetting {
+        uint32_t dcamPropertyId;
+        std::string logMessage;
+    };
+
+    // Add configs, DCAM API property values and logging messages to the unordered map below
+
+    const std::unordered_map<std::string, PropertySetting> propertyMap = {
+        {"exposure_time_", {0x001F0110, "Updating exposure time"}},
+        {"trigger_source_", {0x00100110, "Updating trigger source"}},
+        {"trigger_active_", {0x00100120, "Updating trigger active"}},
+        {"trigger_mode_", {0x00100210, "Updating trigger mode"}},
+        {"trigger_polarity_", {0x00100220, "Updating trigger polarity"}},
+        {"trigger_connector_", {0x00100230, "Updating trigger connector"}},
+        
+    };
+
+    auto it = propertyMap.find(propertyID);
+    if (it != propertyMap.end()) {
+        const auto& setting = it->second;
+        LOG4CXX_INFO(logger_, setting.logMessage << " to: " << value);
+        
+        if (!this->set_dcam_property(setting.dcamPropertyId, value)) {
+            LOG4CXX_ERROR(logger_, "Failed to update " << propertyID);
+            return false;
+        }
+        return true;
+    }
+
+    // Handle other properties that don't require set_dcam_property
+    if (propertyID == "num_frames_") {
+        LOG4CXX_INFO(logger_, "Updating number of frames to: " << value);
+        num_frames_ = static_cast<int>(value);
+        return true;
+    } else if (propertyID == "frame_rate_") {
+        LOG4CXX_INFO(logger_, "Updating frame rate to: " << value);
+        frame_rate_ = value;
+        return true;
+    } else if (propertyID == "camera_number_") {
+        LOG4CXX_INFO(logger_, "Updating camera index to: " << value);
+        camera_number_ = static_cast<int>(value);
+        return true;
+    }
+
+    LOG4CXX_WARN(logger_, "Unknown property: " << propertyID);
+    return false;
 }
 
 double OrcaQuestCamera::get_property(int32 propertyID) {

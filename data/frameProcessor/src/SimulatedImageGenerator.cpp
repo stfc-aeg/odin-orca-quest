@@ -6,7 +6,7 @@
 SimulatedImageGenerator::SimulatedImageGenerator(int width, int height, int bitDepth, ImageFormat format)
     : width_(width), height_(height), bitDepth_(bitDepth), format_(format), current_frame_index_(0) {
     current_frame_.resize(width * height);
-	loadImagesFromFile("/aeg_sw/work/users/mrl93834/livex/odin-dpdk/install/sequence.bin");
+	loadImagesFromFile("/data/odinlogo.bin");
 }
 
 

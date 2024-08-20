@@ -210,7 +210,7 @@ namespace FrameProcessor
         // For example you could loop up the upstream rings that may be required
 
         OrcaQuestCameraController_ = reinterpret_cast<OrcaQuestCameraController*>(decoder_->get_capture_core_ref_());
- 
+
         return true;
     }
 

@@ -22,7 +22,7 @@ public:
     bool prepare_capture(int32_t frameTimeout = 1000) override;
     char* capture_frame() override;
     bool abort_capture() override;
-    bool set_property(int32_t propertyID, double value) override;
+    bool set_property(const std::string& propertyID, double value) override;
     double get_property(int32_t propertyID) override;
     void close() override;
 
@@ -32,6 +32,7 @@ private:
     bool is_capturing_;
     uint64_t frame_count_;
     double frame_time_;
+    int camera_number_;
 
     std::chrono::steady_clock::time_point last_capture_time_;
 

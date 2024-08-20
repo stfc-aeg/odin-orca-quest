@@ -3,30 +3,44 @@
 namespace FrameProcessor{
 
 // Constructor
-OrcaQuestCameraController::OrcaQuestCameraController(ProtocolDecoder* decoder) :
+OrcaQuestCameraController::OrcaQuestCameraController(
+    ProtocolDecoder* decoder,
+    const rapidjson::Value& camera_config
+) :
     decoder_(decoder),
     camera_state_(this),
     logger_(Logger::getLogger("FR.OrcaQuestCameraController")),
     recording_(false)
 {
-    // Constructor implementation goes here.
-    // Initialize decoder, loggers, or any other necessary components.
+    // Parse the camera configuration to determine if we're using a simulated camera
+    bool simulated_camera = false;
+    if (camera_config.HasMember("simulated_camera_") && camera_config["simulated_camera_"].IsBool()) {
+        simulated_camera = camera_config["simulated_camera_"].GetBool();
+    }
 
-
-    if (camera_config_.camera_simulated_mode_) {
-        LOG4CXX_INFO(logger_, "Creating Mocked Camera")
+    // Create the appropriate camera
+    if (simulated_camera) {
+        LOG4CXX_INFO(logger_, "Creating Mocked Camera");
         camera_ = CameraFactory::createCamera("mock");
     } else {
-        LOG4CXX_INFO(logger_, "Using Real Camera")
+        LOG4CXX_INFO(logger_, "Using Real Camera");
         camera_ = CameraFactory::createCamera("real");
     }
 
-    camera_state_.initiate();
-    // std::string connect = "connect";
+    // Create a ParamContainer::Document to pass to update_configuration
+    OdinData::ParamContainer::Document config_doc;
+    config_doc.CopyFrom(camera_config, config_doc.GetAllocator());
 
-    // execute_command(connect);
-    // std::string capture = "capture";
-    // execute_command(capture);
+    LOG4CXX_INFO(logger_, "update_configuration");
+
+    // Call update_configuration with the camera config
+    update_configuration(config_doc);
+
+    LOG4CXX_INFO(logger_, "initiate");
+
+    camera_state_.initiate();
+
+    LOG4CXX_INFO(logger_, "Finish controller init");
 }
 
 // Destructor
@@ -62,10 +76,28 @@ bool OrcaQuestCameraController::execute_command(std::string& command)
 //! Connect to the camera
 bool OrcaQuestCameraController::connect()
 {
-    camera_->api_init();
-    bool connected = camera_->connect(camera_config_.camera_number_);
+    bool connected = camera_->api_init();
+
+    if (connected == false)
+    {
+        LOG4CXX_ERROR(logger_, "Failed to init API");
+        return false;
+    }
+
+    connected = camera_->connect(0);
+    if (connected == false)
+    {
+        LOG4CXX_ERROR(logger_, "Failed to connected to camera");
+        return false;
+    }
     camera_->attach_buffer(10);
     camera_->prepare_capture(camera_config_.image_timeout_);
+
+    // Apply default config if available
+
+    this->apply_configuration();
+
+
     // Return the connection status
     return connected;
 }
@@ -143,115 +175,200 @@ bool OrcaQuestCameraController::update_configuration(OdinData::ParamContainer::D
     OrcaQuestCameraConfiguration new_config(camera_config_);
     new_config.update(params);
 
-
+    LOG4CXX_DEBUG(logger_, "Checking camera_number_ configuration: " << camera_config_.camera_number_ << " to: " << new_config.camera_number_ );
     if (new_config.camera_number_ != camera_config_.camera_number_)
     {
-        LOG4CXX_INFO(logger_, "Updated camera number from: " << camera_config_.camera_number_ << " to: " << new_config.camera_number_);
-
-        // Update camera index
+        LOG4CXX_INFO(logger_, "Updating camera number from: " << camera_config_.camera_number_ << " to: " << new_config.camera_number_);
+        if (!camera_->set_property("camera_number_", new_config.camera_number_))
+        {   
+            LOG4CXX_ERROR(logger_, "Failed to update camera number");
+            return false;
+        }
         camera_config_.camera_number_ = new_config.camera_number_;
     }
 
+    LOG4CXX_DEBUG(logger_, "Checking image_timeout_ configuration");
     if (new_config.image_timeout_ != camera_config_.image_timeout_)
     {
-        LOG4CXX_INFO(logger_,  "Updated image timeout from: " << camera_config_.image_timeout_ << " to: " << new_config.image_timeout_);
-        // Update image timeout
+        LOG4CXX_INFO(logger_,  "Updating image timeout from: " << camera_config_.image_timeout_ << " to: " << new_config.image_timeout_);
         camera_config_.image_timeout_ = new_config.image_timeout_;
     }
 
+    LOG4CXX_DEBUG(logger_, "Checking num_frames_ configuration");
     if (new_config.num_frames_ != camera_config_.num_frames_)
     {
-        LOG4CXX_INFO(logger_, "Updated number of frames from: " << camera_config_.num_frames_ << " to: " << new_config.num_frames_);
-        // Update number of frames to capture
+        LOG4CXX_INFO(logger_, "Updating number of frames from: " << camera_config_.num_frames_ << " to: " << new_config.num_frames_);
         camera_config_.num_frames_ = new_config.num_frames_;
     }
 
+    LOG4CXX_DEBUG(logger_, "Checking exposure_time_ configuration");
     if (new_config.exposure_time_ != camera_config_.exposure_time_)
     {
-        LOG4CXX_INFO(logger_, "Updated exposure time from: " << camera_config_.exposure_time_ << " to: " << new_config.exposure_time_);
-        // Update exposure
-        if (!camera_->set_property(0x001F0110, new_config.exposure_time_))
+        LOG4CXX_INFO(logger_, "Updating exposure time from: " << camera_config_.exposure_time_ << " to: " << new_config.exposure_time_);
+        if (!camera_->set_property("exposure_time_", new_config.exposure_time_))
         {
-            // Check if there was an error setting the camera property
-            LOG4CXX_ERROR(logger_, "ERROR: Failed to updated exposure time from config message")
+            LOG4CXX_ERROR(logger_, "Failed to update exposure time");
             return false;
         }
         camera_config_.exposure_time_ = new_config.exposure_time_;
     }
 
-    if (new_config.frame_rate_ != camera_config_.frame_rate_)
-    {
+    // LOG4CXX_DEBUG(logger_, "Checking frame_rate_ configuration");
+    // if (new_config.frame_rate_ != camera_config_.frame_rate_)
+    // {
+    //     LOG4CXX_INFO(logger_, "Updating frame rate from: " << camera_config_.frame_rate_ << " to: " << new_config.frame_rate_);
+    //     if (!camera_->set_property("frame_rate_", new_config.frame_rate_))
+    //     {
+    //         LOG4CXX_ERROR(logger_, "Failed to update frame rate");
+    //         return false;
+    //     }
+    //     camera_config_.frame_rate_ = new_config.frame_rate_;
+    // }
 
-        LOG4CXX_INFO(logger_, "Updated frame rate from: " << camera_config_.frame_rate_ << " to: " << new_config.frame_rate_);
-        // Update frame rate
-        camera_->set_property(0x00000000, new_config.frame_rate_);
-    }
-
-
+    LOG4CXX_DEBUG(logger_, "Checking trigger_source_ configuration");
     if (new_config.trigger_source_ != camera_config_.trigger_source_)
     {
-        LOG4CXX_INFO(logger_, "Updated trigger source from: " << camera_config_.trigger_source_ << " to: " << new_config.trigger_source_);
-        // Update frame rate
-        if (!camera_->set_property(0x00100110, new_config.trigger_source_))
+        LOG4CXX_INFO(logger_, "Updating trigger source from: " << camera_config_.trigger_source_ << " to: " << new_config.trigger_source_);
+        if (!camera_->set_property("trigger_source_", new_config.trigger_source_))
         {
-            // Check if there was an error setting the camera property
+            LOG4CXX_ERROR(logger_, "Failed to update trigger source");
             return false;
         }
         camera_config_.trigger_source_ = new_config.trigger_source_;
     }
 
+    // LOG4CXX_DEBUG(logger_, "Checking trigger_active_ configuration");
+    // if (new_config.trigger_active_ != camera_config_.trigger_active_)
+    // {
+    //     LOG4CXX_INFO(logger_, "Updating trigger active from: " << camera_config_.trigger_active_ << " to: " << new_config.trigger_active_);
+    //     if (!camera_->set_property("trigger_active_", new_config.trigger_active_))
+    //     {
+    //         LOG4CXX_ERROR(logger_, "Failed to update trigger active");
+    //         return false;
+    //     }
+    //     camera_config_.trigger_active_ = new_config.trigger_active_;
+    // }
 
-    if (new_config.trigger_active_ != camera_config_.trigger_active_)
-    {
-        LOG4CXX_INFO(logger_, "Updated trigger active from: " << camera_config_.trigger_active_ << " to: " << new_config.trigger_active_);
-        // Update frame rate
-        if (!camera_->set_property(0x00100120, new_config.trigger_active_))
-        {
-            // Check if there was an error setting the camera property
-            return false;
-        }
-        camera_config_.trigger_active_ = new_config.trigger_active_;
-    }
+    // LOG4CXX_DEBUG(logger_, "Checking trigger_mode_ configuration");
+    // if (new_config.trigger_mode_ != camera_config_.trigger_mode_)
+    // {
+    //     LOG4CXX_INFO(logger_, "Updating trigger mode from: " << camera_config_.trigger_mode_ << " to: " << new_config.trigger_mode_);
+    //     if (!camera_->set_property("trigger_mode_", new_config.trigger_mode_))
+    //     {
+    //         LOG4CXX_ERROR(logger_, "Failed to update trigger mode");
+    //         return false;
+    //     }
+    //     camera_config_.trigger_mode_ = new_config.trigger_mode_;
+    // }
 
+    // LOG4CXX_DEBUG(logger_, "Checking trigger_polarity_ configuration");
+    // if (new_config.trigger_polarity_ != camera_config_.trigger_polarity_)
+    // {
+    //     LOG4CXX_INFO(logger_, "Updating trigger polarity from: " << camera_config_.trigger_polarity_ << " to: " << new_config.trigger_polarity_);
+    //     if (!camera_->set_property("trigger_polarity_", new_config.trigger_polarity_))
+    //     {
+    //         LOG4CXX_ERROR(logger_, "Failed to update trigger polarity");
+    //         return false;
+    //     }
+    //     camera_config_.trigger_polarity_ = new_config.trigger_polarity_;
+    // }
 
-    if (new_config.trigger_mode_ != camera_config_.trigger_mode_)
-    {
-        LOG4CXX_INFO(logger_, "Updated trigger mode from: " << camera_config_.trigger_mode_ << " to: " << new_config.trigger_mode_);
-        // Update frame rate
-        
-        if (!camera_->set_property(0x00100210, new_config.trigger_mode_))
-        {
-            // Check if there was an error setting the camera property
-            return false;
-        }
-    }
+    // LOG4CXX_DEBUG(logger_, "Checking trigger_connector_ configuration");
+    // if (new_config.trigger_connector_ != camera_config_.trigger_connector_)
+    // {
+    //     LOG4CXX_INFO(logger_, "Updating trigger connector from: " << camera_config_.trigger_connector_ << " to: " << new_config.trigger_connector_);
+    //     if (!camera_->set_property("trigger_connector_", new_config.trigger_connector_))
+    //     {
+    //         LOG4CXX_ERROR(logger_, "Failed to update trigger connector");
+    //         return false;
+    //     }
+    //     camera_config_.trigger_connector_ = new_config.trigger_connector_;
+    // }
 
-
-    if (new_config.trigger_polarity_ != camera_config_.trigger_polarity_)
-    {
-        LOG4CXX_INFO(logger_, "Updated trigger polarity from: " << camera_config_.trigger_polarity_ << " to: " << new_config.trigger_polarity_);
-        // Update trigger polarity
-        
-        if (!camera_->set_property(0x00100220, new_config.trigger_polarity_))
-        {
-            // Check if there was an error setting the camera property
-            return false;
-        }
-    }
-
-    if (new_config.trigger_connector_ != camera_config_.trigger_connector_)
-    {
-        LOG4CXX_INFO(logger_, "Updated trigger connector from: " << camera_config_.trigger_connector_ << " to: " << new_config.trigger_connector_);
-        // Update trigger connector
-        
-        if (!camera_->set_property(0x00100230, new_config.trigger_connector_))
-        {
-            // Check if there was an error setting the camera property
-            return false;
-        }
-    }
-    return true;        
+    LOG4CXX_DEBUG(logger_, "Configuration update completed successfully");
+    return true;
 }
+
+bool OrcaQuestCameraController::apply_configuration()
+{
+
+    // Apply the config to the camera this needs to be done after connection to the camera
+
+
+    LOG4CXX_DEBUG(logger_, "Applying config to camera");
+
+
+    LOG4CXX_INFO(logger_, "Updating camera number to: " << camera_config_.camera_number_);
+    if (!camera_->set_property("camera_number_", camera_config_.camera_number_))
+    {   
+        LOG4CXX_ERROR(logger_, "Failed to update camera number");
+        return false;
+    }
+
+
+    LOG4CXX_INFO(logger_, "Updating exposure time to: " << camera_config_.exposure_time_);
+    if (!camera_->set_property("exposure_time_", camera_config_.exposure_time_))
+    {
+        LOG4CXX_ERROR(logger_, "Failed to update exposure time");
+        return false;
+    }
+
+
+    LOG4CXX_INFO(logger_, "Updating frame rate to: " << camera_config_.frame_rate_);
+    if (!camera_->set_property("frame_rate_", camera_config_.frame_rate_))
+    {
+        LOG4CXX_ERROR(logger_, "Failed to update frame rate");
+        return false;
+    }
+
+
+    LOG4CXX_INFO(logger_, "Updating trigger source to: " << camera_config_.trigger_source_);
+    if (!camera_->set_property("trigger_source_", camera_config_.trigger_source_))
+    {
+        LOG4CXX_ERROR(logger_, "Failed to update trigger source");
+        return false;
+    }
+
+
+
+    // LOG4CXX_INFO(logger_, "Updating trigger active to: " << camera_config_.trigger_active_);
+    // if (!camera_->set_property("trigger_active_", camera_config_.trigger_active_))
+    // {
+    //     LOG4CXX_ERROR(logger_, "Failed to update trigger active");
+    //     return false;
+    // }
+
+
+
+    // LOG4CXX_INFO(logger_, "Updating trigger mode to: " << camera_config_.trigger_mode_);
+    // if (!camera_->set_property("trigger_mode_", camera_config_.trigger_mode_))
+    // {
+    //     LOG4CXX_ERROR(logger_, "Failed to update trigger mode");
+    //     return false;
+    // }
+
+
+
+    // LOG4CXX_INFO(logger_, "Updating trigger polarity to: " << camera_config_.trigger_polarity_);
+    // if (!camera_->set_property("trigger_polarity_", camera_config_.trigger_polarity_))
+    // {
+    //     LOG4CXX_ERROR(logger_, "Failed to update trigger polarity");
+    //     return false;
+    // }
+
+
+
+    // LOG4CXX_INFO(logger_, "Updating trigger connector to: " << camera_config_.trigger_connector_);
+    // if (!camera_->set_property("trigger_connector_", camera_config_.trigger_connector_))
+    // {
+    //     LOG4CXX_ERROR(logger_, "Failed to update trigger connector");
+    //     return false;
+    // }
+
+    LOG4CXX_DEBUG(logger_, "Configuration update completed successfully");
+    return true;
+}
+
 
 bool OrcaQuestCameraController::request_configuration(const std::string param_prefix, OdinData::IpcMessage& config_reply)
 {
@@ -280,6 +397,7 @@ bool OrcaQuestCameraController::get_status(const std::string param_prefix, OdinD
 
     return true;
 }
+
 
 // Camera state name
 std::string OrcaQuestCameraController::camera_state_name()

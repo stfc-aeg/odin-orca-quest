@@ -81,7 +81,7 @@ char* SimulatedCamera::capture_frame()
     if (elapsed >= frame_time_) {
             last_capture_time_ = current_time;
 
-            imageGenerator.generateImage(0, frame_count_);
+            imageGenerator.generateImage(camera_number_, frame_count_);
             frame_count_++;
 
             return (char*) imageGenerator.getImageData().data();
@@ -95,16 +95,21 @@ bool SimulatedCamera::abort_capture() {
     return true;
 }
 
-bool SimulatedCamera::set_property(int32_t propertyID, double value) {
+bool SimulatedCamera::set_property(const std::string& propertyID, double value) {
 
-    if (propertyID == 0x001F0110)
+    if (propertyID == "exposure_time_")
     {
         frame_time_ = value;
     }
 
-    if (propertyID == 0x00000000)
+    if (propertyID == "frame_rate_")
     {
         frame_time_ = 1 / value;
+    }
+
+    if (propertyID == "camera_number")
+    {
+        camera_number_ = (int) value;
     }
     return true;
 }

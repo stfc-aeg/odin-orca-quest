@@ -7,7 +7,7 @@ namespace FrameProcessor
 {
     namespace Defaults
     {
-        const unsigned int default_camera_number = 0; 
+        const unsigned int default_camera_number = 0;
         const double default_image_timeout = 10; 
         const unsigned int default_number_frames = 0; 
         const unsigned int default_timestamp_mode = 2;
@@ -18,7 +18,7 @@ namespace FrameProcessor
         const int default_trigger_polarity = 1;
         const int default_trigger_connector = 2;
 
-        const bool default_simulated_camera = true;
+        const bool default_simulated_camera = false;
     }
 
     class OrcaQuestCameraConfiguration : public OdinData::ParamContainer
@@ -38,8 +38,7 @@ namespace FrameProcessor
                 image_timeout_(Defaults::default_image_timeout),
                 num_frames_(Defaults::default_number_frames),
                 timestamp_mode_(Defaults::default_timestamp_mode),
-                exposure_time_(0.0),
-                frame_rate_(0.0),
+                exposure_time_(0.0082944),
                 trigger_source_(Defaults::default_trigger_source),
                 trigger_active_(Defaults::default_trigger_mode),
                 trigger_mode_(Defaults::default_trigger_active),
@@ -85,7 +84,6 @@ namespace FrameProcessor
                 bind_param<unsigned int>(num_frames_, "num_frames");
                 bind_param<unsigned int>(timestamp_mode_, "timestamp_mode");
                 bind_param<double>(exposure_time_, "exposure_time");
-                bind_param<double>(frame_rate_, "frame_rate");
                 bind_param<int>(trigger_source_, "trigger_source");
                 bind_param<int>(trigger_active_, "trigger_active");
                 bind_param<int>(trigger_mode_, "trigger_mode");

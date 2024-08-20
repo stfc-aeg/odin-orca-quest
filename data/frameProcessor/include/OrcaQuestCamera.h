@@ -6,6 +6,7 @@
 #include <iostream>
 #include <string>
 #include <cstring>
+#include <unordered_map>
 
 #include <log4cxx/logger.h>
 using namespace log4cxx;
@@ -32,7 +33,7 @@ public:
     bool prepare_capture(int32_t frameTimeout = 1000) override;
     char* capture_frame() override;
     bool abort_capture() override;
-    bool set_property(int32_t propertyID, double value) override;
+    bool set_property(const std::string& propertyID, double value) override;
     double get_property(int32_t propertyID) override;
     void close() override;
 
@@ -40,6 +41,9 @@ public:
     _DCAMPROPMODEVALUE property_values;
 
 private:
+
+    bool set_dcam_property(int32 propertyID, double value);
+
     DCAMAPI_INIT api_init_param_;
     DCAMDEV_OPEN device_handle_;   
     DCAMERR err_;
@@ -50,6 +54,10 @@ private:
     DCAMBUF_FRAME frameBuffer_;
     DCAMWAIT_START frameReady_Waiter_;
     DCAMCAP_TRANSFERINFO captransferinfo_;
+
+    int num_frames_;
+    int frame_rate_;
+    int camera_number_;
 
     LoggerPtr logger_;
 
