@@ -149,9 +149,9 @@ class OrcaCamera():
 
     def status_ioloop_callback(self):
         """Periodic callback task to update camera status."""
-        if self.error_consecutive >= 10:
+        if self.error_consecutive >= 50:
             # After 10 consecutive errors, halt the background task
-            logging.debug("Multiple consecutive errors in camera response. Halting periodic request task.")
+            logging.error("Multiple consecutive errors in camera response. Halting periodic request task.")
             self.stop_background_tasks()
         self.get_status_config(msg='status', silence_reply=True)
         self.get_status_config(msg='request_configuration', silence_reply=True)
