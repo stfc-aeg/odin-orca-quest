@@ -14,6 +14,7 @@ class OrcaCamera():
         self.name = name
         self.msg_id = 0
 
+        self.status_default = status_bg_task_enable
         self.status_bg_task_enable = status_bg_task_enable
         self.status_bg_task_interval = status_bg_task_interval
         self.status = {}
@@ -24,13 +25,26 @@ class OrcaCamera():
         self.timeout_ms = 1000
         self.error_consecutive = 0
 
-        self.camera = IpcChannel(IpcChannel.CHANNEL_TYPE_DEALER)
-        self.camera.connect(endpoint)
+        self._connect()
 
+    def _connect(self):
+        """Create an IpcChannel object and build the ParameterTree."""
+        # IpcChannel object
+        self.camera = IpcChannel(IpcChannel.CHANNEL_TYPE_DEALER)
+        self.camera.connect(self.endpoint)
+        # With no return from IpcChannel.connect(), assume success until failure is reached
+        self.connected = True
+
+        # Tree branches
         self.tree['camera_name'] = self.name
         self.tree['endpoint'] = self.endpoint
         self.tree['command'] = (lambda: None, self.send_command)
+        self.tree['connection'] = {
+            'connected': (lambda: self.connected, None),
+            'reconnect': (lambda: False, self._reconnect)
+        }
 
+        # Get config
         self.get_status_config(msg='request_configuration')  # Goes to self.config
         if self.config:
             self.tree['config'] = {}
@@ -40,18 +54,25 @@ class OrcaCamera():
                     self.config[key], partial(self.set_config, param=key)
                 )  # Function uses key (the parameter) as argument via partial
 
+        # Get status
         self.get_status_config(msg='status')
         self.tree['status'] = {}
         for key in self.status.keys():
             self.tree['status'][key] = (lambda key=key: self.status[key], None)
 
+        # Background task branch of tree
         self.tree['background_task'] = {
             "interval": (lambda: self.status_bg_task_interval, self.set_task_interval),
             "enable": (lambda: self.status_bg_task_enable, self.set_task_enable)
         }
 
-        if self.status_bg_task_enable:
+        if self.status_default:
             self.start_background_tasks()
+
+    def _reconnect(self, value=None):
+        """Close the previous camera connection and recreate it."""
+        self._close_connection()
+        self._connect()
 
     def send_command(self, value):
         """Compose a command message to be sent to the camera.
@@ -149,8 +170,9 @@ class OrcaCamera():
 
     def status_ioloop_callback(self):
         """Periodic callback task to update camera status."""
-        if self.error_consecutive >= 50:
-            # After 10 consecutive errors, halt the background task
+        if self.error_consecutive >= 10:
+            # After 10 consecutive errors, halt the background task and assume disconnected
+            self.connected = False
             logging.error("Multiple consecutive errors in camera response. Halting periodic request task.")
             self.stop_background_tasks()
         self.get_status_config(msg='status', silence_reply=True)
@@ -159,6 +181,7 @@ class OrcaCamera():
     def start_background_tasks(self):
         """Start the background tasks and reset the continuous error counter."""
         self.error_consecutive = 0
+        self.connected = True
 
         logging.debug(f"Launching camera status update task for {self.name} camera with interval {self.status_bg_task_interval}.")
         self.status_ioloop_task = PeriodicCallback(
@@ -185,3 +208,8 @@ class OrcaCamera():
         """Set the background task interval."""
         logging.debug("Setting background task interval to %f", interval)
         self.status_bg_task_interval = float(interval)
+
+    def _close_connection(self):
+        """Close the IpcChannel connection."""
+        logging.info(f"Closing socket for camera {self.name}.")
+        self.camera.close()
