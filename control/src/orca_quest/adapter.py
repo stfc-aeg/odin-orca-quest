@@ -4,6 +4,7 @@ from tornado.escape import json_decode
 
 from odin.adapters.adapter import ApiAdapter, ApiAdapterResponse, request_types, response_types
 from odin.adapters.parameter_tree import ParameterTreeError
+from odin.util import decode_request_body
 
 from orca_quest.controller import OrcaController, OrcaError
 
@@ -20,11 +21,11 @@ class OrcaAdapter(ApiAdapter):
             item.strip() for item in self.options.get('camera_endpoint', None).split(",")
         ]
         names = [
-            item.strip() for item in self.options.get('camera_name', 'camera_1').split(",")
+            item.strip() for item in self.options.get('camera_name', None).split(",")
         ]
 
         status_bg_task_enable = bool(self.options.get('status_bg_task_enable', 1))
-        status_bg_task_interval = int(self.options.get('status_bg_task_interval', 1))
+        status_bg_task_interval = float(self.options.get('status_bg_task_interval', 1))
 
         # Create acquisition controller
         self.camera = OrcaController(endpoints, names,
@@ -53,7 +54,7 @@ class OrcaAdapter(ApiAdapter):
         return ApiAdapterResponse(response, content_type=content_type,
                                   status_code=status_code)
 
-    @request_types('application/json')
+    @request_types('application/json',"application/vnd.odin-native")
     @response_types('application/json', default='application/json')
     def put(self, path, request):
         """Handle an HTTP PUT request.
@@ -64,25 +65,19 @@ class OrcaAdapter(ApiAdapter):
         :param request: HTTP request object
         :return: an ApiAdapterResponse object containing the appropriate response
         """
-
-        content_type = 'application/json'
-
         try:
-            data = json_decode(request.body)
+            data = decode_request_body(request)
             self.camera.set(path, data)
             response = self.camera.get(path)
-            status_code = 200
-        except OrcaError as e:
-            response = {'error': str(e)}
-            status_code = 400
-        except (TypeError, ValueError) as e:
-            response = {'error': 'Failed to decode PUT request body: {}'.format(str(e))}
-            status_code = 400
+            content_type = "applicaiton/json"
+            status = 200
 
-        logging.debug(response)
+        except ParameterTreeError as param_error:
+            response = {'response': 'TriggerAdapter PUT error: {}'.format(param_error)}
+            content_type = 'application/json'
+            status = 400
 
-        return ApiAdapterResponse(response, content_type=content_type,
-                                  status_code=status_code)
+        return ApiAdapterResponse(response, content_type=content_type, status_code=status)
 
     def delete(self, path, request):
         """Handle an HTTP DELETE request.

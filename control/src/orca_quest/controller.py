@@ -15,21 +15,31 @@ class OrcaController():
 
         # Internal variables
         self.cameras = []
-        camtrees = []
-        tree = {}
+
+        self.endpoints = endpoints
+        self.names = names
 
         self.status_bg_task_enable = status_bg_task_enable
         self.status_bg_task_interval = status_bg_task_interval
 
-        for i in range((len(endpoints))):
-            # For each desired camera, create OrcaCamera with name and endpoint
-            camera = OrcaCamera(endpoints[i], names[i], self.status_bg_task_enable, self.status_bg_task_interval)
+        # Also builds the tree
+        self._connect_cameras()
 
-            # Store in list of cameras and put tree in list of trees
+    def _connect_cameras(self, value=None):
+        """Build the parameter tree and attempt to connect the cameras to it."""
+        if len(self.cameras) > 0:
+            for camera in self.cameras:
+                camera._close_connection()
+        self.cameras = []
+        camtrees = {}
+        tree = {}
+
+        for i in range(len(self.endpoints)):
+            camera = OrcaCamera(self.endpoints[i], self.names[i], self.status_bg_task_enable, self.status_bg_task_interval)
             self.cameras.append(camera)
-            camtrees.append(camera.tree)
-
-        # Array of camera trees becomes real parameter tree
+            camtrees[self.names[i]] = camera.tree
+        
+        # Array of camera trees becomes a real Parameter Tree
         tree['cameras'] = camtrees
         self.param_tree = ParameterTree(tree)
 
