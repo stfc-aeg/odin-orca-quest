@@ -18,10 +18,10 @@ class OrcaAdapter(ApiAdapter):
 
         # Split on comma, remove whitespace if it exists
         endpoints = [
-            item.strip() for item in self.options.get('camera_endpoint', None).split(",")
+            item.strip() for item in self.options.get('camera_endpoint', '').split(",") if item.strip()
         ]
         names = [
-            item.strip() for item in self.options.get('camera_name', None).split(",")
+            item.strip() for item in self.options.get('camera_name', '').split(",") if item.strip()
         ]
 
         status_bg_task_enable = bool(self.options.get('status_bg_task_enable', 1))
