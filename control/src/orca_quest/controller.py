@@ -50,6 +50,13 @@ class OrcaController():
         """
         return self.param_tree.get(path)
 
+    def get_camera_by_name(self, name):
+        """Get a camera object by referencing its name."""
+        for cam in self.cameras:
+            if name == cam.name:
+                return cam
+        return None
+
     def set(self, path, data):
         """Set parameters in the parameter tree.
         This method simply wraps underlying ParameterTree method so that an exceptions can be
