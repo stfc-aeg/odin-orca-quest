@@ -19,7 +19,7 @@ class OrcaCamera():
         self.status_bg_task_interval = status_bg_task_interval
         self.status = {}
 
-        self.config = {}
+        self.config = {'exposure_time': 0}
         self.tree = {}
 
         self.timeout_ms = 1000
@@ -135,6 +135,8 @@ class OrcaCamera():
             if response:
                 if ('camera' in response.attrs['params'].keys()):
                     self.config = response.attrs['params']['camera']
+                    if 'exposure_time' not in response.attrs['params']['camera']:
+                        self.config.update({'exposure_time': 0})  # For other functions that may require it
                 elif ('status' in response.attrs['params'].keys()):
                     self.status = response.attrs['params']['status']
                 else:
