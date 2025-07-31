@@ -2,6 +2,7 @@ from odin_data.control.ipc_channel import IpcChannel
 from odin_data.control.ipc_message import IpcMessage
 
 from tornado.ioloop import PeriodicCallback
+from odin.adapters.parameter_tree import ParameterTree, ParameterTreeError, ParameterAccessor
 
 from functools import partial
 import logging
@@ -47,13 +48,15 @@ class OrcaCamera():
         # Get config
         self.get_status_config(msg='request_configuration')  # Goes to self.config
         if self.config:
-            self.tree['config'] = {}
+            config_tree = {}
 
             for key, item in self.config.items():
-                self.tree['config'][key] = (lambda key=key:
+                config_tree[key] = (lambda key=key:
                     self.config[key], partial(self.set_config, param=key)
                 )  # Function uses key (the parameter) as argument via partial
 
+            config_tree = ParameterTree(config_tree)
+            self.tree['config'] = config_tree
         # Get status
         self.get_status_config(msg='status')
         self.tree['status'] = {}
@@ -65,6 +68,8 @@ class OrcaCamera():
             "interval": (lambda: self.status_bg_task_interval, self.set_task_interval),
             "enable": (lambda: self.status_bg_task_enable, self.set_task_enable)
         }
+
+        self.param_tree = ParameterTree(self.tree)
 
         if self.status_default:
             self.start_background_tasks()

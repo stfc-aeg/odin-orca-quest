@@ -37,18 +37,18 @@ class OrcaController():
         for i in range(len(self.endpoints)):
             camera = OrcaCamera(self.endpoints[i], self.names[i], self.status_bg_task_enable, self.status_bg_task_interval)
             self.cameras.append(camera)
-            camtrees[self.names[i]] = camera.tree
-        
+            camtrees[self.names[i]] = camera.param_tree
+
         # Array of camera trees becomes a real Parameter Tree
         tree['cameras'] = camtrees
-        self.param_tree = ParameterTree(tree)
+        self.param_tree = ParameterTree(tree['cameras'])
 
-    def get(self, path):
+    def get(self, path, metadata=False):
         """Get the parameter tree.
         This method returns the parameter tree for use by clients via the FurnaceController adapter.
         :param path: path to retrieve from tree
         """
-        return self.param_tree.get(path)
+        return self.param_tree.get(path, metadata)
 
     def get_camera_by_name(self, name):
         """Get a camera object by referencing its name."""
