@@ -40,7 +40,7 @@ class OrcaController(BaseController):
                 camera._close_connection()
         self.cameras = []
         camtrees = {}
-        tree = {}
+        tree = {'camera_names': self.names}
 
         for i in range(len(self.endpoints)):
             camera = OrcaCamera(self.endpoints[i], self.names[i], self.status_bg_task_enable, self.status_bg_task_interval)
@@ -49,7 +49,7 @@ class OrcaController(BaseController):
 
         # Array of camera trees becomes a real Parameter Tree
         tree['cameras'] = camtrees
-        self.param_tree = ParameterTree(tree['cameras'])
+        self.param_tree = ParameterTree(tree)
 
     def get(self, path, metadata=False):
         """Get the parameter tree.
