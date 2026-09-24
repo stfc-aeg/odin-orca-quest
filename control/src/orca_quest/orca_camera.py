@@ -2,7 +2,7 @@ from odin_data.control.ipc_channel import IpcChannel
 from odin_data.control.ipc_message import IpcMessage
 
 from tornado.ioloop import PeriodicCallback
-from odin.adapters.parameter_tree import ParameterTree, ParameterTreeError, ParameterAccessor
+from odin_control.adapters.parameter_tree import ParameterTree, ParameterTreeError
 
 from functools import partial
 import logging

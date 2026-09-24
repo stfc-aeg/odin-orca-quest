@@ -1,26 +1,34 @@
 """Class to control camera. Initially, IPC communication as this is how the cameras will be interacted with."""
 
-from odin.adapters.parameter_tree import ParameterTree, ParameterTreeError
+from odin_control.adapters.base_controller import BaseController, BaseError
+from odin_control.adapters.parameter_tree import ParameterTree, ParameterTreeError
+
 from orca_quest.orca_camera import OrcaCamera
 
 class OrcaError(Exception):
     """Simple exception class to wrap lower-level exceptions."""
     pass
 
-class OrcaController():
+class OrcaController(BaseController):
     """Class to consolidate ORCA-Quest camera controls."""
 
-    def __init__(self, endpoints, names, status_bg_task_enable, status_bg_task_interval):
+    def __init__(self, options):
         """This constructor initialises the object and builds parameter trees."""
+        self.options = options
+
+        # Split on comma, remove whitespace if it exists
+        self.endpoints = [
+            item.strip() for item in self.options.get('camera_endpoint', '').split(",") if item.strip()
+        ]
+        self.names = [
+            item.strip() for item in self.options.get('camera_name', '').split(",") if item.strip()
+        ]
+
+        self.status_bg_task_enable = bool(self.options.get('status_bg_task_enable', 1))
+        self.status_bg_task_interval = float(self.options.get('status_bg_task_interval', 1))
 
         # Internal variables
         self.cameras = []
-
-        self.endpoints = endpoints
-        self.names = names
-
-        self.status_bg_task_enable = status_bg_task_enable
-        self.status_bg_task_interval = status_bg_task_interval
 
         # Also builds the tree
         self._connect_cameras()
@@ -32,7 +40,7 @@ class OrcaController():
                 camera._close_connection()
         self.cameras = []
         camtrees = {}
-        tree = {}
+        tree = {'camera_names': self.names}
 
         for i in range(len(self.endpoints)):
             camera = OrcaCamera(self.endpoints[i], self.names[i], self.status_bg_task_enable, self.status_bg_task_interval)
@@ -41,7 +49,7 @@ class OrcaController():
 
         # Array of camera trees becomes a real Parameter Tree
         tree['cameras'] = camtrees
-        self.param_tree = ParameterTree(tree['cameras'])
+        self.param_tree = ParameterTree(tree)
 
     def get(self, path, metadata=False):
         """Get the parameter tree.

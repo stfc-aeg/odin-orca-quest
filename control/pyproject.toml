@@ -1,0 +1,57 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "orca_quest"
+description = "ODIN ORCA-Quest control"
+urls = {Homepage = "https://github.com/stfc-aeg/odin-orca-quest"}
+authors = [
+    {name = "Mika Shearwood", email = "mika.shearwood@stfc.ac.uk"},
+]
+dynamic = ["version"]
+requires-python=">=3.10.0"
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3.10"
+]
+dependencies = [
+    "odin-control>=2.1.0",
+    "odin-data @ git+https://github.com/odin-detector/odin-data.git@1.10.2#subdirectory=python"
+]
+
+[project.optional-dependencies]
+dev = [
+    "mock; python_version < '3'",
+    "requests",
+    "tox",
+    "pytest-asyncio",
+    "pytest-cov",
+]
+graylog = ["pygelf"]
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.dynamic]
+version = {attr = "orca_quest.__version__"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "strict"
+
+[tool.coverage.run]
+omit = ["**/orca_quest/_version.py"]
+data_file = "/tmp/orca_quest.coverage"
+
+[tool.coverage.paths]
+source = [
+    "src",
+    "**/site-packages/",
+]
+
+[tool.flake8]
+max-line-length = 100
