@@ -17,7 +17,7 @@ classifiers = [
     "Programming Language :: Python :: 3.10"
 ]
 dependencies = [
-    "odin-control>=2.0.0",
+    "odin-control>=2.1.0",
     "odin-data @ git+https://github.com/odin-detector/odin-data.git@1.10.2#subdirectory=python"
 ]
 
